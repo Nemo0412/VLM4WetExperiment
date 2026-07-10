@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Check whether a lab video follows a given protocol using LLaVA-1.5-7B.
+"""Check whether a lab video follows a protocol using LLaVA-NeXT-Video-7B.
 
-LLaVA is image-only, so we uniformly sample frames and stitch them into a
-single grid image before prompting.
+Uniformly samples frames from the mp4 and feeds them as native video tokens
+(no frame-grid stitching).
 """
 
 from __future__ import annotations
@@ -11,69 +11,46 @@ import argparse
 import math
 from pathlib import Path
 
-import cv2
+import numpy as np
 import torch
-from PIL import Image
+from decord import VideoReader, cpu
+from transformers import AutoConfig
 
-from llava.constants import (
-    DEFAULT_IMAGE_TOKEN,
-    DEFAULT_IM_END_TOKEN,
-    DEFAULT_IM_START_TOKEN,
-    IMAGE_TOKEN_INDEX,
-)
-from llava.conversation import conv_templates
-from llava.mm_utils import (
-    get_model_name_from_path,
-    process_images,
-    tokenizer_image_token,
-)
+from llava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
+from llava.conversation import SeparatorStyle, conv_templates
+from llava.mm_utils import get_model_name_from_path, tokenizer_image_token, KeywordsStoppingCriteria
 from llava.model.builder import load_pretrained_model
 from llava.utils import disable_torch_init
 
 
-def sample_video_frames(video_path: str, num_frames: int = 8) -> list[Image.Image]:
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        raise RuntimeError(f"Cannot open video: {video_path}")
-
-    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    if total <= 0:
-        raise RuntimeError(f"Video has no frames: {video_path}")
-
-    indices = [int(i * (total - 1) / max(num_frames - 1, 1)) for i in range(num_frames)]
-    frames: list[Image.Image] = []
-    for idx in indices:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-        ok, frame = cap.read()
-        if not ok:
-            continue
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frames.append(Image.fromarray(rgb))
-    cap.release()
-
-    if not frames:
-        raise RuntimeError(f"Failed to read frames from: {video_path}")
-    return frames
+def load_video_tensor(video_path: str, image_processor, num_frames: int) -> torch.Tensor:
+    vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
+    total = len(vr)
+    indices = np.linspace(0, max(total - 1, 0), num_frames, dtype=int).tolist()
+    frames = vr.get_batch(indices).asnumpy()
+    return image_processor.preprocess(frames, return_tensors="pt")["pixel_values"]
 
 
-def make_grid(frames: list[Image.Image], cell_size: int = 336) -> Image.Image:
-    n = len(frames)
-    cols = math.ceil(math.sqrt(n))
-    rows = math.ceil(n / cols)
-    grid = Image.new("RGB", (cols * cell_size, rows * cell_size), color=(0, 0, 0))
-    for i, frame in enumerate(frames):
-        thumb = frame.copy()
-        thumb.thumbnail((cell_size, cell_size), Image.Resampling.LANCZOS)
-        x = (i % cols) * cell_size + (cell_size - thumb.width) // 2
-        y = (i // cols) * cell_size + (cell_size - thumb.height) // 2
-        grid.paste(thumb, (x, y))
-    return grid
+def build_overwrite_config(model_path: str, num_frames: int, pool_stride: int) -> dict:
+    cfg = AutoConfig.from_pretrained(model_path)
+    overwrite = {
+        "mm_spatial_pool_mode": "average",
+        "mm_spatial_pool_stride": pool_stride,
+        "mm_newline_position": "grid",
+    }
+    least = num_frames * (24 // pool_stride) ** 2 + 1000
+    scaling = math.ceil(least / 4096)
+    if scaling >= 2 and "vicuna" in cfg._name_or_path.lower():
+        overwrite["rope_scaling"] = {"factor": float(scaling), "type": "linear"}
+        overwrite["max_sequence_length"] = 4096 * scaling
+        overwrite["tokenizer_model_max_length"] = 4096 * scaling
+    return overwrite
 
 
-def build_prompt(protocol_text: str, model_name: str, use_im_start_end: bool) -> tuple[str, str]:
+def build_prompt(protocol_text: str, conv_mode: str) -> str:
     question = (
-        "These frames are sampled in temporal order from a laboratory experiment video "
-        "(left-to-right, top-to-bottom).\n\n"
+        "These frames are uniformly sampled in temporal order from a laboratory "
+        "experiment video.\n\n"
         "Reference protocol:\n"
         f"{protocol_text.strip()}\n\n"
         "Based only on the visible frames, decide whether the experimenter followed this protocol.\n"
@@ -82,86 +59,71 @@ def build_prompt(protocol_text: str, model_name: str, use_im_start_end: bool) ->
         "2) Brief evidence from the frames (what steps you can / cannot observe)\n"
         "3) Any likely deviations or missing steps, if applicable"
     )
-
-    if use_im_start_end:
-        qs = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + "\n" + question
-    else:
-        qs = DEFAULT_IMAGE_TOKEN + "\n" + question
-
-    if "llama-2" in model_name.lower():
-        conv_mode = "llava_llama_2"
-    elif "v1" in model_name.lower():
-        conv_mode = "llava_v1"
-    else:
-        conv_mode = "llava_v0"
-
+    qs = DEFAULT_IMAGE_TOKEN + "\n" + question
     conv = conv_templates[conv_mode].copy()
     conv.append_message(conv.roles[0], qs)
     conv.append_message(conv.roles[1], None)
-    return conv.get_prompt(), conv_mode
+    return conv.get_prompt()
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", default="liuhaotian/llava-v1.5-7b")
+    parser.add_argument("--model-path", default="lmms-lab/LLaVA-NeXT-Video-7B-DPO")
     parser.add_argument("--model-base", default=None)
     parser.add_argument("--video", required=True)
     parser.add_argument("--protocol", required=True)
-    parser.add_argument("--num-frames", type=int, default=8)
+    parser.add_argument("--num-frames", type=int, default=32)
+    parser.add_argument("--pool-stride", type=int, default=2)
+    parser.add_argument("--conv-mode", default="vicuna_v1")
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--max-new-tokens", type=int, default=512)
-    parser.add_argument("--grid-out", default=None, help="Optional path to save frame grid")
-    parser.add_argument("--output", default=None, help="Optional path to save model answer")
+    parser.add_argument("--attn-impl", default="sdpa")
+    parser.add_argument("--output", default=None)
     args = parser.parse_args()
 
     protocol_text = Path(args.protocol).read_text(encoding="utf-8")
-    frames = sample_video_frames(args.video, num_frames=args.num_frames)
-    grid = make_grid(frames)
-
-    if args.grid_out:
-        Path(args.grid_out).parent.mkdir(parents=True, exist_ok=True)
-        grid.save(args.grid_out)
-        print(f"[INFO] Saved frame grid to {args.grid_out}")
-
     disable_torch_init()
+
+    overwrite = build_overwrite_config(args.model_path, args.num_frames, args.pool_stride)
     model_name = get_model_name_from_path(args.model_path)
     tokenizer, model, image_processor, _ = load_pretrained_model(
-        args.model_path, args.model_base, model_name
+        args.model_path, args.model_base, model_name,
+        torch_dtype="bfloat16", overwrite_config=overwrite, attn_implementation=args.attn_impl,
     )
 
-    prompt, conv_mode = build_prompt(
-        protocol_text,
-        model_name,
-        use_im_start_end=getattr(model.config, "mm_use_im_start_end", False),
-    )
-    print(f"[INFO] model={args.model_path} conv_mode={conv_mode} frames={len(frames)}")
+    video_tensor = load_video_tensor(args.video, image_processor, args.num_frames)
+    video_tensor = video_tensor.to(model.device, dtype=torch.bfloat16)
+    videos = [video_tensor]
+
+    prompt = build_prompt(protocol_text, args.conv_mode)
+    print(f"[INFO] model={args.model_path} frames={args.num_frames} conv={args.conv_mode}")
     print(f"[INFO] video={args.video}")
     print(f"[INFO] protocol={args.protocol}")
     print("=" * 60)
 
-    images_tensor = process_images([grid], image_processor, model.config).to(
-        model.device, dtype=torch.float16
-    )
-    input_ids = (
-        tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
-        .unsqueeze(0)
-        .to(model.device)
-    )
+    input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
+    input_ids = input_ids.unsqueeze(0).to(model.device)
+    attention_mask = input_ids.ne(tokenizer.pad_token_id or 0).long()
+
+    conv = conv_templates[args.conv_mode]
+    stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
+    stopping = KeywordsStoppingCriteria([stop_str], tokenizer, input_ids)
 
     with torch.inference_mode():
         output_ids = model.generate(
-            input_ids,
-            images=images_tensor,
-            image_sizes=[grid.size],
+            inputs=input_ids,
+            images=videos,
+            attention_mask=attention_mask,
+            modalities="video",
             do_sample=args.temperature > 0,
-            temperature=args.temperature,
+            temperature=max(args.temperature, 1e-5),
             num_beams=1,
             max_new_tokens=args.max_new_tokens,
             use_cache=True,
+            stopping_criteria=[stopping],
         )
 
     answer = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
-    # Some LLaVA builds return the full prompt+answer; keep the assistant turn only.
     if "ASSISTANT:" in answer:
         answer = answer.split("ASSISTANT:")[-1].strip()
 

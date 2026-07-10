@@ -1,18 +1,21 @@
 # VLM4WetExperiment
 
-Fine-tune **LLaVA-1.5** on the [FineBio](https://arxiv.org/abs/2402.00293) wet-lab video dataset for **protocol / scene understanding** and **compliance detection**.
+Fine-tune **LLaVA-NeXT-Video-7B** on the [FineBio](https://arxiv.org/abs/2402.00293) wet-lab video dataset for **protocol / scene understanding** and **compliance detection**.
+
+Videos are fed as **native multi-frame input** (default **32 uniformly sampled frames**). No frame-grid stitching.
 
 ## Requirements
 
-- Python 3.10+, PyTorch, [LLaVA](https://github.com/haotian-liu/LLaVA) (editable install)
+- Python 3.10+, PyTorch, [LLaVA-NeXT](https://github.com/LLaVA-VL/LLaVA-NeXT) (editable install)
 - `playwright` + Chromium (for Box download)
-- `opencv-python`, `peft`, `transformers`
-- 1 GPU for training (~20 min with LoRA on A100/H100)
+- `opencv-python`, `peft`, `transformers`, `decord`, `av`
+- 1× A100 (or similar) for training (~1–3 h with LoRA, batch=1, 32 frames)
 
 ```bash
-pip install playwright opencv-python peft transformers
+git clone https://github.com/LLaVA-VL/LLaVA-NeXT.git
+pip install -e LLaVA-NeXT
+pip install playwright opencv-python peft transformers decord av
 playwright install chromium
-# Install LLaVA from source, then use your conda env
 ```
 
 ## 1. Download FineBio
@@ -61,7 +64,7 @@ unzip -q annotations/finebio_action_annotations.zip -d action_annotations
 
 ## 2. Dataset organization
 
-FineBio raw data is converted into **LLaVA instruction-tuning JSON** + **frame-grid images**. We do **not** feed raw video to LLaVA-1.5 directly.
+FineBio raw data is converted into **LLaVA instruction JSON** + **video symlinks**. Frames are sampled at train/inference time.
 
 ### Raw FineBio inputs
 
@@ -73,16 +76,15 @@ FineBio raw data is converted into **LLaVA instruction-tuning JSON** + **frame-g
 
 ### One trial → multiple training samples
 
-For each of **226 trials**, `prepare_finebio_llava.py` builds:
+For each of **226 trials**, `prepare_finebio_video.py` builds:
 
 ```
 trial P06_03_01
-├── {trial}_intact.jpg          # uniform 16-frame grid from full video
-├── {trial}_synth0.jpg          # optional: drop-one-step corruption
-├── {trial}_synth1.jpg          # optional: shuffle-step corruption
+├── videos/P06_03_01.mp4     # symlink to source mp4
 └── JSON entries:
-    ├── {trial}_intact_scene    # scene QA (correct trials only)
-    └── {trial}_intact_comp     # compliance QA (FOLLOWED / NOT FOLLOWED)
+    ├── P06_03_01_intact_scene    # scene QA (correct trials only)
+    ├── P06_03_01_intact_comp     # compliance QA (FOLLOWED / NOT FOLLOWED)
+    └── P06_03_01_synth{k}_comp   # optional corrupted samples (frame_indices override)
 ```
 
 **Sample fields** (`train.json` / `val.json`):
@@ -90,7 +92,7 @@ trial P06_03_01
 ```json
 {
   "id": "P06_03_01_intact_comp",
-  "image": "images/P06_03_01_intact.jpg",
+  "video": "videos/P06_03_01.mp4",
   "protocol_id": 2,
   "integrity": 1,
   "conversations": [
@@ -100,62 +102,51 @@ trial P06_03_01
 }
 ```
 
+Synthetic corruption samples add `"frame_indices": [12, 45, ...]` so dropped/shuffled steps change which moments are shown.
+
 | Field | Meaning |
 |-------|---------|
 | `protocol_id` | 0–6 mapped from FineBio protocol 01–07 |
 | `integrity` | 1 = intact video, 0 = corrupted / mistake |
-| `_scene` | Protocol + step description (answer **generated from annotations**) |
-| `_comp` | Compliance verdict (FOLLOWED=1 / NOT_FOLLOWED=0 for aux head) |
+| `frame_indices` | optional; overrides uniform 32-frame sampling |
 
-**Labels:** protocol ID comes from the filename; QA text is **template-generated** from step CSVs (FineBio has no official protocol text or dialogue labels).
+**Split:** shuffle all samples → **90% train / 10% val** (`--val-frac 0.1`, seed=0).
 
-**Synthetic errors:** for correct trials, we programmatically build corrupted grids (missing / shuffled steps) to augment the 11 real mistake videos.
+### Frame sampling (default: 32)
 
-**Split:** shuffle all samples → **90% train / 10% val** (`--val-frac 0.1`, seed=0). Typical counts: ~989 train, ~109 val, ~1098 total.
+LLaVA-NeXT-Video processes each frame separately with spatial pooling (stride 2 → 12×12 tokens/frame). Long context scaling is applied automatically when 32 frames exceed 4096 tokens.
 
-### Frame sampling (current default: 16)
-
-LLaVA-1.5 is **image-only**: N frames are sampled uniformly in time, resized, and tiled into **one square grid** (e.g. 16 → 4×4, each cell ~336 px).
-
-| Frames | Grid | Issue |
-|--------|------|-------|
-| 16 | 4×4 | Current default; ~1 frame per protocol step |
-| 32 | ~6×6 | Smaller cells, more temporal coverage |
-| 256 | 16×16 | **Not usable as one grid** — each cell ≈ 21 px, unreadable; image would be ~5376×5376 px |
-
-**256 frames** requires a different design, e.g.:
-
-- **Multi-chunk:** 256 frames → 16 grids × 16 frames, multi-turn QA or aggregate compliance head
-- **Annotation-aware sampling:** sample at step boundaries instead of uniform (better than blind 256)
-- **Video LLM:** LLaVA-NeXT-Video / Video-LLaVA (native multi-frame input)
-
-This repo currently implements **uniform sampling + single grid** only (`--num-frames`, default **16**).
+| Model | Default frames | Sampling |
+|-------|----------------|----------|
+| **LLaVA-NeXT-Video-7B** (this repo) | 32 | Uniform; optional step-aware `frame_indices` for synth |
+| Legacy LLaVA-1.5 grid pipeline | 16 | See `scripts/prepare_finebio_llava.py` |
 
 ## 3. Prepare train / val split
 
-Build frame grids + LLaVA instruction JSON (default **90% train / 10% val**):
-
 ```bash
-python scripts/prepare_finebio_llava.py \
-  --videos-dir data/FineBio/videos_w640/finebio_videos_w640 \
-  --ann-dir data/FineBio/action_annotations/finebio_action_annotations \
+python scripts/prepare_finebio_video.py \
+  --videos-dir data/FineBio/videos_w640 \
+  --ann-dir data/FineBio/action_annotations \
   --mistake-videos-dir data/FineBio/mistake_videos \
-  --out-dir data/finebio_llava \
-  --num-frames 16 \
-  --synth-per-trial 3 \
+  --out-dir data/finebio_video \
+  --num-frames 32 \
+  --synth-per-trial 2 \
   --val-frac 0.1
 ```
 
 Outputs:
 
 ```
-data/finebio_llava/
-  images/                   # one grid JPG per trial variant
+data/finebio_video/
+  videos/                   # symlinks to mp4 files
   train.json / val.json     # LLaVA conversation format
-  protocol_reference.json   # inferred step lists per protocol 01–07
+  protocol_reference.json
+  meta.json
 ```
 
 ## 4. Train
+
+**Model:** `lmms-lab/LLaVA-NeXT-Video-7B-DPO`
 
 **Loss:**
 
@@ -175,59 +166,66 @@ Default: \(\lambda_{\text{comp}} = 1.0\). Baseline (LM only): `--lambda-comp 0 -
 
 ```bash
 export HF_HOME=/path/to/huggingface
+pip install -e /path/to/LLaVA-NeXT
 
-python train_finebio_ssl.py \
-  --model-path liuhaotian/llava-v1.5-7b \
-  --train-json data/finebio_llava/train.json \
-  --image-folder data/finebio_llava \
-  --output-dir outputs/finebio_comp_proto \
+python train_finebio_video.py \
+  --model-path lmms-lab/LLaVA-NeXT-Video-7B-DPO \
+  --train-json data/finebio_video/train.json \
+  --video-folder data/finebio_video \
+  --output-dir outputs/finebio_video_comp_proto \
+  --conv-version vicuna_v1 \
+  --num-frames 32 \
   --epochs 3 \
   --lambda-comp 1.0 \
   --lambda-proto 0.3
 ```
 
-**Slurm (A100 example):**
+**Slurm (A100):**
 
 ```bash
-sbatch run_finebio_ssl_train_a100.sbatch
+sbatch run_finebio_video_train_a100.sbatch
 # Baseline only:
-MODE=baseline sbatch run_finebio_ssl_train_a100.sbatch
+MODE=baseline sbatch run_finebio_video_train_a100.sbatch
 ```
 
 Checkpoints: LoRA adapter + `non_lora_trainables.bin` (projector) + `aux_heads.bin`.
 
 ## 5. Inference & evaluation
 
-Zero-shot or fine-tuned protocol check on a single video:
+Protocol check on a single video:
 
 ```bash
+pip install -e /path/to/LLaVA-NeXT
+
 python infer_protocol_compliance.py \
-  --model-path liuhaotian/llava-v1.5-7b \
+  --model-path lmms-lab/LLaVA-NeXT-Video-7B-DPO \
   --video path/to/video.mp4 \
   --protocol data/FineBio/protocol_03_dna_extraction.txt \
-  --num-frames 16 \
+  --num-frames 32 \
   --output outputs/answer.txt
 ```
 
-Compare baseline vs fine-tuned on FineBio mistake trials:
+Compare baseline vs fine-tuned on FineBio mistake trials (legacy LLaVA-1.5 eval):
 
 ```bash
 sbatch run_finebio_eval.sbatch
-# Report: outputs/finebio_eval_compare/report.md
 ```
 
 ## Project layout
 
 ```
 scripts/
-  download_finebio_box.py    # Box → local/scratch download
-  prepare_finebio_llava.py   # videos + annotations → LLaVA JSON
-train_finebio_ssl.py         # LoRA fine-tuning + aux heads
-infer_protocol_compliance.py # single-video inference
-eval_finebio_mistakes.py     # baseline vs fine-tuned comparison
-run_finebio_ssl_train*.sbatch
+  download_finebio_box.py      # Box → local/scratch download
+  prepare_finebio_video.py     # videos + annotations → LLaVA-NeXT JSON
+  prepare_finebio_llava.py     # legacy LLaVA-1.5 grid pipeline
+train_finebio_video.py         # LLaVA-NeXT-Video LoRA + aux heads
+train_finebio_ssl.py           # legacy LLaVA-1.5 trainer
+infer_protocol_compliance.py   # single-video inference (LLaVA-NeXT-Video)
+eval_finebio_mistakes.py       # baseline vs fine-tuned comparison (legacy)
+run_finebio_video_train_a100.sbatch
+run_finebio_ssl_train*.sbatch  # legacy
 ```
 
 ## Citation
 
-If you use FineBio, cite the original dataset paper. This repo provides a VLM fine-tuning pipeline on top of LLaVA.
+If you use FineBio, cite the original dataset paper. This repo provides a VLM fine-tuning pipeline on top of LLaVA-NeXT-Video.

@@ -1,6 +1,7 @@
 # Data & artifacts (too large for git)
 data/FineBio/
 data/finebio_llava/
+data/finebio_video/
 outputs/
 /scratch/
 
