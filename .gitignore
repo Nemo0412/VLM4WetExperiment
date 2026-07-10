@@ -1,0 +1,19 @@
+# Data & artifacts (too large for git)
+data/FineBio/
+data/finebio_llava/
+outputs/
+/scratch/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Cache & local
+.cache/
+*.docx
+.env
+
+# LSV side data (not part of FineBio pipeline)
+data/LSV/
