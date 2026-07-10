@@ -59,7 +59,79 @@ cd data/FineBio
 unzip -q annotations/finebio_action_annotations.zip -d action_annotations
 ```
 
-## 2. Prepare train / val split
+## 2. Dataset organization
+
+FineBio raw data is converted into **LLaVA instruction-tuning JSON** + **frame-grid images**. We do **not** feed raw video to LLaVA-1.5 directly.
+
+### Raw FineBio inputs
+
+| Source | Content |
+|--------|---------|
+| `P{xx}_{proto}_{trial}.mp4` | FPV video; middle field `proto` ∈ {01…07} is protocol ID |
+| `P{xx}_{proto}_{trial}.txt` | Step annotations: `start_sec,end_sec,task,...` |
+| `finebio_mistake_trials.zip` | 3 major mistake videos + 8 minor (paper Table 13) |
+
+### One trial → multiple training samples
+
+For each of **226 trials**, `prepare_finebio_llava.py` builds:
+
+```
+trial P06_03_01
+├── {trial}_intact.jpg          # uniform 16-frame grid from full video
+├── {trial}_synth0.jpg          # optional: drop-one-step corruption
+├── {trial}_synth1.jpg          # optional: shuffle-step corruption
+└── JSON entries:
+    ├── {trial}_intact_scene    # scene QA (correct trials only)
+    └── {trial}_intact_comp     # compliance QA (FOLLOWED / NOT FOLLOWED)
+```
+
+**Sample fields** (`train.json` / `val.json`):
+
+```json
+{
+  "id": "P06_03_01_intact_comp",
+  "image": "images/P06_03_01_intact.jpg",
+  "protocol_id": 2,
+  "integrity": 1,
+  "conversations": [
+    {"from": "human", "value": "<image>\n... Did the experimenter follow this protocol?"},
+    {"from": "gpt",   "value": "FOLLOWED. The observed steps match ..."}
+  ]
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `protocol_id` | 0–6 mapped from FineBio protocol 01–07 |
+| `integrity` | 1 = intact video, 0 = corrupted / mistake |
+| `_scene` | Protocol + step description (answer **generated from annotations**) |
+| `_comp` | Compliance verdict (FOLLOWED=1 / NOT_FOLLOWED=0 for aux head) |
+
+**Labels:** protocol ID comes from the filename; QA text is **template-generated** from step CSVs (FineBio has no official protocol text or dialogue labels).
+
+**Synthetic errors:** for correct trials, we programmatically build corrupted grids (missing / shuffled steps) to augment the 11 real mistake videos.
+
+**Split:** shuffle all samples → **90% train / 10% val** (`--val-frac 0.1`, seed=0). Typical counts: ~989 train, ~109 val, ~1098 total.
+
+### Frame sampling (current default: 16)
+
+LLaVA-1.5 is **image-only**: N frames are sampled uniformly in time, resized, and tiled into **one square grid** (e.g. 16 → 4×4, each cell ~336 px).
+
+| Frames | Grid | Issue |
+|--------|------|-------|
+| 16 | 4×4 | Current default; ~1 frame per protocol step |
+| 32 | ~6×6 | Smaller cells, more temporal coverage |
+| 256 | 16×16 | **Not usable as one grid** — each cell ≈ 21 px, unreadable; image would be ~5376×5376 px |
+
+**256 frames** requires a different design, e.g.:
+
+- **Multi-chunk:** 256 frames → 16 grids × 16 frames, multi-turn QA or aggregate compliance head
+- **Annotation-aware sampling:** sample at step boundaries instead of uniform (better than blind 256)
+- **Video LLM:** LLaVA-NeXT-Video / Video-LLaVA (native multi-frame input)
+
+This repo currently implements **uniform sampling + single grid** only (`--num-frames`, default **16**).
+
+## 3. Prepare train / val split
 
 Build frame grids + LLaVA instruction JSON (default **90% train / 10% val**):
 
@@ -78,15 +150,12 @@ Outputs:
 
 ```
 data/finebio_llava/
-  images/          # 16-frame grids per trial
-  train.json       # ~989 samples
-  val.json         # ~109 samples
-  protocol_reference.json
+  images/                   # one grid JPG per trial variant
+  train.json / val.json     # LLaVA conversation format
+  protocol_reference.json   # inferred step lists per protocol 01–07
 ```
 
-Each sample includes `protocol_id` (0–6) and `integrity` (1=intact, 0=corrupted) for auxiliary losses.
-
-## 3. Train
+## 4. Train
 
 **Loss:**
 
@@ -127,7 +196,7 @@ MODE=baseline sbatch run_finebio_ssl_train_a100.sbatch
 
 Checkpoints: LoRA adapter + `non_lora_trainables.bin` (projector) + `aux_heads.bin`.
 
-## 4. Inference & evaluation
+## 5. Inference & evaluation
 
 Zero-shot or fine-tuned protocol check on a single video:
 
