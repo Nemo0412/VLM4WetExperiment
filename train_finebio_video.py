@@ -268,10 +268,15 @@ def main():
 
     torch.manual_seed(args.seed)
     os.makedirs(args.output_dir, exist_ok=True)
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is not available on this node")
-    torch.cuda.set_device(0)
-    device = "cuda"
+    if not torch.cuda.is_available() or torch.cuda.device_count() < 1:
+        raise RuntimeError(
+            f"CUDA unavailable (visible_devices={os.environ.get('CUDA_VISIBLE_DEVICES')}, "
+            f"count={torch.cuda.device_count()})")
+    device = torch.device("cuda:0")
+    torch.cuda.set_device(device)
+    _ = torch.zeros(1, device=device)
+    torch.cuda.synchronize(device)
+    print(f"[cuda] using {device}, CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES')}")
 
     data_args = SimpleNamespace(is_multimodal=True, mm_use_im_start_end=False)
 
@@ -301,8 +306,11 @@ def main():
     for p in base.get_vision_tower().parameters():
         p.requires_grad_(False)
 
-    protocol_head = nn.Linear(hidden, 7).to(device=device, dtype=torch.bfloat16)
-    compliance_head = nn.Linear(hidden, 2).to(device=device, dtype=torch.bfloat16)
+    model_device = next(p.device for p in model.parameters() if p.device.type == "cuda")
+    protocol_head = nn.Linear(hidden, 7, device=model_device, dtype=torch.bfloat16)
+    compliance_head = nn.Linear(hidden, 2, device=model_device, dtype=torch.bfloat16)
+    device = model_device
+    print(f"[cuda] aux heads on {device}")
     model.enable_input_require_grads()
     model.gradient_checkpointing_enable()
 

@@ -12,14 +12,16 @@
 set -euo pipefail
 
 echo "[INFO] FineBio LLaVA-NeXT-Video training (v2 stable) on $(hostname) at $(date)"
-sleep 15
+sleep 10
 nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader
 
 export HF_HOME=/scratch/ll5914/huggingface
 export TMPDIR=/scratch/ll5914/tmp
 export TRANSFORMERS_VERBOSITY=error
 export TOKENIZERS_PARALLELISM=false
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_DEVICE_ORDER=PCI_BUS_ID
+# Do NOT override CUDA_VISIBLE_DEVICES — Slurm binds the allocated GPU for this job.
+echo "[INFO] SLURM_JOB_GPUS=${SLURM_JOB_GPUS:-unset} SLURM_STEP_GPUS=${SLURM_STEP_GPUS:-unset} CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-unset}"
 
 source /share/apps/anaconda3/2025.06/etc/profile.d/conda.sh
 conda activate /scratch/ll5914/conda_envs/SVD
@@ -53,6 +55,17 @@ else
 fi
 
 echo "[INFO] MODE=$MODE model=$MODEL out=$OUT epochs=$EPOCHS frames=16"
+
+python3 - <<'PY'
+import os, sys, torch
+print("[cuda-preflight] CUDA_VISIBLE_DEVICES =", os.environ.get("CUDA_VISIBLE_DEVICES"))
+print("[cuda-preflight] torch.cuda.is_available =", torch.cuda.is_available())
+print("[cuda-preflight] device_count =", torch.cuda.device_count())
+if not torch.cuda.is_available() or torch.cuda.device_count() < 1:
+    sys.exit("CUDA preflight failed: no GPU visible to PyTorch")
+x = torch.zeros(1, device="cuda:0")
+print("[cuda-preflight] ok, tensor device =", x.device)
+PY
 
 python "$ROOT/train_finebio_video.py" \
   --model-path "$MODEL" \
