@@ -1,0 +1,36 @@
+# FineBioStreaming default config
+task: streaming_halt
+architecture: vlm_llava_next_video   # VLM required for protocol+video+reason
+
+data:
+  frames_per_chunk: 8
+  steps_per_chunk: 2
+  synth_per_trial: 3
+  val_frac: 0.1
+
+model:
+  # Primary backbone: video VLM (not CLIP-only)
+  model_path: lmms-lab/LLaVA-NeXT-Video-7B-DPO
+  num_frames: 8
+  pool_stride: 2
+  lora_r: 64
+  lora_alpha: 128
+  n_halt: 5
+  # Aux heads on top of VLM hidden states for calibrated early stop
+
+loss:
+  # L = L_lm + λ_halt L_halt + λ_step L_step
+  lambda_halt: 1.0
+  lambda_step: 0.3
+
+train:
+  epochs: 3
+  gpus: 4
+  batch_size: 1          # per GPU
+  grad_accum: 2          # global batch ≈ 8
+  lr: 1.0e-4
+  num_workers: 4
+  save_every: 100        # checkpoint-N every 100 steps
+
+infer:
+  halt_threshold: 0.45

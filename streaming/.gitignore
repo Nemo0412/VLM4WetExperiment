@@ -1,0 +1,11 @@
+# Data & outputs live on scratch
+/scratch/
+
+__pycache__/
+*.py[cod]
+.venv/
+.cache/
+.env
+outputs/
+data/
+*.pt
