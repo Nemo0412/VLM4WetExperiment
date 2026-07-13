@@ -84,13 +84,27 @@ def load_chunk(video, t0, t1, fps, k, image_processor):
     return image_processor.preprocess(frames, return_tensors="pt")["pixel_values"]
 
 
-def build_prompt(protocol_id: int, conv_mode: str) -> str:
+def build_prompt(
+    protocol_id: int,
+    conv_mode: str,
+    history_steps: list[str] | None = None,
+    current_desc: str | None = None,
+    expected_next: str | None = None,
+):
     name = PROTOCOL_NAMES.get(protocol_id, f"protocol {protocol_id}")
+
+    def _h(task: str) -> str:
+        return task.replace("_", " ").replace("70pct", "70%")
+
+    hist = " -> ".join(_h(s) for s in history_steps) if history_steps else "(none yet)"
+    cur = current_desc or "(latest video chunk)"
+    expect = f" Next expected step: '{_h(expected_next)}'." if expected_next else ""
     q = (
-        f"You are monitoring a wet-lab experiment in real time. "
-        f"The intended protocol is protocol {protocol_id}: {name}. "
-        "Based on the latest video chunk, decide whether to CONTINUE or HALT. "
-        "If HALT, state the error type and brief reason."
+        f"You are monitoring a wet-lab experiment in real time.\n"
+        f"Intended protocol {protocol_id}: {name}.\n"
+        f"Progress so far: {hist}.\n"
+        f"Current video chunk shows: {cur}.{expect}\n"
+        "Decide CONTINUE or HALT. If HALT, state error_type and a brief reason."
     )
     qs = DEFAULT_IMAGE_TOKEN + "\n" + q
     conv = conv_templates[conv_mode].copy()
@@ -108,6 +122,19 @@ def parse_text_halt(text: str) -> tuple[bool, str]:
     return "HALT" in text, text.strip()
 
 
+def decide_halt(text_halt: bool, p_halt: float | None, threshold: float, mode: str) -> bool:
+    head_halt = p_halt is not None and p_halt >= threshold
+    if mode == "lm":
+        return text_halt
+    if mode == "head":
+        return head_halt
+    if mode == "agree":
+        return text_halt and head_halt
+    if mode == "either":
+        return text_halt or head_halt
+    raise ValueError(f"unknown decision mode: {mode}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--checkpoint", default=None, help="LoRA dir; if None use base VLM only")
@@ -120,6 +147,14 @@ def main():
     ap.add_argument("--steps-per-chunk", type=int, default=2)
     ap.add_argument("--window-sec", type=float, default=20.0)
     ap.add_argument("--halt-threshold", type=float, default=0.45)
+    ap.add_argument(
+        "--decision", default="lm", choices=["lm", "head", "agree", "either"],
+        help="lm=text only (default); head=aux only; agree=both; either=old OR behavior",
+    )
+    ap.add_argument(
+        "--full-trace", action="store_true",
+        help="Continue after first HALT to record all chunks (still reports first halt)",
+    )
     ap.add_argument("--conv-mode", default="vicuna_v1")
     ap.add_argument("--attn-impl", default="sdpa")
     ap.add_argument("--output", default=None)
@@ -163,7 +198,10 @@ def main():
         i = 0
         while i < len(spans):
             g = spans[i: i + args.steps_per_chunk]
-            chunks.append({"t0": g[0][0], "t1": g[-1][1]})
+            chunks.append({
+                "t0": g[0][0], "t1": g[-1][1],
+                "steps": [t for _, _, t in g],
+            })
             i += args.steps_per_chunk
     else:
         t = 0.0
@@ -173,16 +211,24 @@ def main():
 
     print(f"[stream] VLM={base}")
     print(f"[stream] protocol={args.protocol_id}: {PROTOCOL_NAMES.get(args.protocol_id)}")
-    print(f"[stream] chunks={len(chunks)}")
+    print(f"[stream] chunks={len(chunks)} decision={args.decision}")
     print("=" * 60)
 
     history, final = [], None
+    progress_steps: list[str] = []
     with torch.inference_mode():
         for ci, ch in enumerate(chunks):
             video_t = load_chunk(
                 args.video, ch["t0"], ch["t1"], fps, args.num_frames, image_processor
             ).to(model.device, dtype=torch.bfloat16)
-            prompt, conv = build_prompt(args.protocol_id, args.conv_mode)
+            cur_desc = f"time {ch['t0']:.1f}-{ch['t1']:.1f}s"
+            if "steps" in ch:
+                cur_desc = ", ".join(ch["steps"]) + f" ({cur_desc})"
+            prompt, conv = build_prompt(
+                args.protocol_id, args.conv_mode,
+                history_steps=progress_steps,
+                current_desc=cur_desc,
+            )
             input_ids = tokenizer_image_token(
                 prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt"
             ).unsqueeze(0).to(model.device)
@@ -211,29 +257,50 @@ def main():
             text = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
             if "ASSISTANT:" in text:
                 text = text.split("ASSISTANT:")[-1].strip()
-            is_halt, _ = parse_text_halt(text)
-            if p_halt is not None and p_halt >= args.halt_threshold:
-                is_halt = True
+            text_halt, _ = parse_text_halt(text)
+            is_halt = decide_halt(text_halt, p_halt, args.halt_threshold, args.decision)
 
             line = f"[chunk {ci}] t={ch['t0']:.1f}-{ch['t1']:.1f}s"
             if p_halt is not None:
                 line += f" P(halt)={p_halt:.3f}"
-            line += f" | {text[:120]}"
+            line += f" text_halt={text_halt} decide={is_halt} | {text[:100]}"
             print(line)
-            history.append({"chunk": ci, "text": text, "p_halt": p_halt})
+            history.append({
+                "chunk": ci, "t0": ch["t0"], "t1": ch["t1"],
+                "text": text, "text_halt": text_halt, "p_halt": p_halt, "halted": is_halt,
+                "history_steps": list(progress_steps),
+            })
+            # Accumulate coarse progress for next prompt (time windows or step names)
+            if "steps" in ch:
+                progress_steps.extend(ch["steps"])
+            else:
+                progress_steps.append(f"{ch['t0']:.0f}-{ch['t1']:.0f}s")
 
-            if is_halt:
-                print("-" * 60)
-                print(text)
-                print("[stream] STOP")
-                final = {"halt_chunk": ci, "t0": ch["t0"], "t1": ch["t1"],
-                         "reason": text, "p_halt": p_halt, "protocol_id": args.protocol_id}
-                break
+            if is_halt and final is None:
+                final = {
+                    "halt_chunk": ci, "t0": ch["t0"], "t1": ch["t1"],
+                    "reason": text, "p_halt": p_halt, "protocol_id": args.protocol_id,
+                    "decision": args.decision,
+                }
+                if not args.full_trace:
+                    print("-" * 60)
+                    print(text)
+                    print("[stream] STOP")
+                    break
         else:
-            final = {"halt_chunk": None, "reason": "CONTINUE through end of stream.",
-                     "protocol_id": args.protocol_id}
+            if final is None:
+                final = {
+                    "halt_chunk": None,
+                    "reason": "CONTINUE through end of stream.",
+                    "protocol_id": args.protocol_id,
+                    "decision": args.decision,
+                }
             print("-" * 60)
-            print(final["reason"])
+            if final.get("halt_chunk") is not None:
+                print(f"[stream] first HALT at chunk {final['halt_chunk']} "
+                      f"(decision={args.decision}, full_trace={args.full_trace})")
+            else:
+                print(final["reason"])
             print("[stream] END")
 
     if args.output:

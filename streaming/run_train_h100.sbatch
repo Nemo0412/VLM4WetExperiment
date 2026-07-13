@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 #SBATCH -J fb_stream_v2
-#SBATCH -c 16
-#SBATCH -t 12:00:00
-#SBATCH --mem=256G
-#SBATCH --gres=gpu:2
+#SBATCH -c 32
+#SBATCH -t 06:00:00
+#SBATCH --mem=384G
+#SBATCH --gres=gpu:4
 #SBATCH --account=torch_pr_674_tandon_advanced
-#SBATCH --partition=a100_tandon
+#SBATCH --partition=h100_tandon
 #SBATCH -o /scratch/ll5914/Labos/FineBioStreaming/logs/train_%j.out
 #SBATCH -e /scratch/ll5914/Labos/FineBioStreaming/logs/train_%j.err
 
 set -euo pipefail
 
-echo "[INFO] FineBioStreaming v2 2-GPU train on $(hostname) at $(date)"
+echo "[INFO] FineBioStreaming v2 4-GPU H100 train on $(hostname) at $(date)"
 sleep 5
 nvidia-smi --query-gpu=index,name,memory.total,utilization.gpu --format=csv,noheader
-echo "[INFO] SLURM_JOB_GPUS=${SLURM_JOB_GPUS:-unset} CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-unset}"
+echo "[INFO] CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-unset}"
 
 export HF_HOME=/scratch/ll5914/huggingface
 export TMPDIR=/scratch/ll5914/tmp
@@ -49,8 +49,7 @@ fi
 UTIL_PID=$!
 trap 'kill $UTIL_PID 2>/dev/null || true' EXIT
 
-# 2 GPUs * batch 1 * grad_accum 4 ≈ global batch 8 (same as prior 4-GPU setup)
-torchrun --standalone --nnodes=1 --nproc_per_node=2 \
+torchrun --standalone --nnodes=1 --nproc_per_node=4 \
   "$ROOT/train_streaming.py" \
   --model-path "$MODEL" \
   --train-json "$DATA/train.json" \
@@ -61,7 +60,7 @@ torchrun --standalone --nnodes=1 --nproc_per_node=2 \
   --pool-stride 2 \
   --epochs 3 \
   --batch-size 1 \
-  --grad-accum 4 \
+  --grad-accum 2 \
   --lr 1e-4 \
   --lambda-halt 1.0 \
   --lambda-step 0.3 \

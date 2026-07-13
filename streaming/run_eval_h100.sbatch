@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-#SBATCH -J fb_eval
+#SBATCH -J fb_eval2
 #SBATCH -c 16
-#SBATCH -t 01:30:00
+#SBATCH -t 02:00:00
 #SBATCH --mem=128G
 #SBATCH --gres=gpu:1
 #SBATCH --account=torch_pr_674_tandon_advanced
@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-echo "[INFO] FineBioStreaming eval on $(hostname) at $(date)"
+echo "[INFO] FineBioStreaming eval v2 on $(hostname) at $(date)"
 sleep 5
 nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader
 echo "[INFO] CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-unset}"
@@ -30,9 +30,13 @@ pip install -q -e "$LLAVA_NEXT" 2>/dev/null || pip install -e "$LLAVA_NEXT"
 ROOT=/home/ll5914/Labos/FineBioStreaming
 cd "$ROOT"
 
+# A: LM-primary decision + full traces; offline compare all modes
+# C: fixed 20s windows for both correct/mistake + GT halt windows
 python eval_correct_mistake.py \
   --checkpoint /scratch/ll5914/Labos/FineBioStreaming/outputs/streaming_vlm_v1 \
-  --out-dir /scratch/ll5914/Labos/FineBioStreaming/outputs/eval_correct_mistake \
+  --out-dir /scratch/ll5914/Labos/FineBioStreaming/outputs/eval_streaming_v2 \
+  --decision lm \
+  --also-compare-modes \
   --halt-threshold 0.45 \
   --num-frames 8 \
   --window-sec 20

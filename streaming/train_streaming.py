@@ -420,7 +420,13 @@ def main():
                 continue
 
             z = out.hidden_states[-1][:, -1, :].to(torch.bfloat16)
-            l_halt = F.cross_entropy(unwrap(halt_head)(z).float(), halt_y)
+            # Upweight non-CONTINUE classes so halt head does not collapse
+            halt_w = torch.tensor([1.0, 2.5, 2.5, 2.5, 2.5], device=device, dtype=torch.float32)
+            if halt_w.numel() != args.n_halt:
+                halt_w = torch.ones(args.n_halt, device=device, dtype=torch.float32)
+                if args.n_halt > 1:
+                    halt_w[1:] = 2.5
+            l_halt = F.cross_entropy(unwrap(halt_head)(z).float(), halt_y, weight=halt_w)
             l_step = F.cross_entropy(unwrap(step_head)(z).float(), step_y, ignore_index=-100)
             total = lm_loss + args.lambda_halt * l_halt + args.lambda_step * l_step
             if not torch.isfinite(total):
