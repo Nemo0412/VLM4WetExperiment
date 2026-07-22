@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-#SBATCH -J fb_qwen_sft
+#SBATCH -J fb_qwen_h1
 #SBATCH -c 16
 #SBATCH -t 12:00:00
 #SBATCH --mem=192G
 #SBATCH --gres=gpu:1
 #SBATCH --account=torch_pr_674_tandon_advanced
-#SBATCH --partition=a100_tandon
+#SBATCH --partition=h100_tandon
 #SBATCH -o /scratch/ll5914/Labos/FineBioQwenStream/logs/train_%j.out
 #SBATCH -e /scratch/ll5914/Labos/FineBioQwenStream/logs/train_%j.err
 
@@ -36,8 +36,6 @@ LOCAL="${SLURM_TMPDIR:-/tmp}/fb_qwen_${SLURM_JOB_ID}"
 mkdir -p "$LOCAL"
 rsync -a "$DATA/train.jsonl" "$LOCAL/"
 
-# OOM fixes vs v1: max_frames 48→16, max_pixels capped, LoRA r 64→16,
-# last-hidden hook (no full hidden_states), grad-accum 16→8
 python "$ROOT/train_sft.py" \
   --model-path Qwen/Qwen2.5-VL-7B-Instruct \
   --train-jsonl "$LOCAL/train.jsonl" \

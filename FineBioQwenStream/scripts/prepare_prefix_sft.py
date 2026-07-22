@@ -370,8 +370,8 @@ def main() -> None:
     ap.add_argument("--out-dir", default="/scratch/ll5914/Labos/FineBioQwenStream/data/proto_prefix_v1")
     ap.add_argument("--intended", default="1,2,3,4,5,6,7",
                     help="Ordered protocol ids for the session plan")
-    ap.add_argument("--frames-per-proto", type=int, default=16,
-                    help="Sparse frames from each *correct* protocol video")
+    ap.add_argument("--frames-per-proto", type=int, default=4,
+                    help="Sparse uniform frames from each *correct* protocol video")
     ap.add_argument("--halt-frames", type=int, default=5)
     ap.add_argument("--halt-oversample", type=int, default=3)
     ap.add_argument("--max-neg", type=int, default=24)

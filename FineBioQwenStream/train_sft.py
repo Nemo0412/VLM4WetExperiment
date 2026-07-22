@@ -126,9 +126,60 @@ def find_lora_targets(model):
     return sorted(names) or ["q_proj", "v_proj"]
 
 
-def pooled_last_hidden(out) -> torch.Tensor:
+def configure_processor_pixels(processor, max_pixels: int, min_pixels: int):
+    """Cap Qwen2.5-VL vision tokens — default max_pixels≈12M OOMs with video."""
+    for proc in (getattr(processor, "image_processor", None),
+                 getattr(processor, "video_processor", None)):
+        if proc is None:
+            continue
+        if hasattr(proc, "max_pixels"):
+            proc.max_pixels = max_pixels
+        if hasattr(proc, "min_pixels"):
+            proc.min_pixels = min_pixels
+        if hasattr(proc, "size") and isinstance(proc.size, dict):
+            proc.size = {
+                **proc.size,
+                "shortest_edge": min_pixels,
+                "longest_edge": max_pixels,
+            }
+
+
+def attach_last_hidden_hook(model):
+    """Capture only the last decoder layer hidden states (avoid storing all layers)."""
+    bucket: dict = {}
+
+    def _hook(_module, _inp, out):
+        h = out[0] if isinstance(out, tuple) else out
+        bucket["h"] = h
+
+    root = model.get_base_model() if hasattr(model, "get_base_model") else model
+    layers = None
+    # Try common Qwen2.5-VL paths, then fall back to any ModuleList named "layers"
+    candidates = []
+    core = getattr(root, "model", root)
+    for obj in (
+        getattr(getattr(core, "language_model", None), "layers", None),
+        getattr(getattr(core, "model", None), "layers", None),
+        getattr(core, "layers", None),
+    ):
+        if obj is not None:
+            candidates.append(obj)
+    if not candidates:
+        for name, mod in root.named_modules():
+            if name.endswith("language_model.layers") or name.endswith(".layers"):
+                if hasattr(mod, "__len__") and len(mod) > 0:
+                    candidates.append(mod)
+                    break
+    if not candidates:
+        raise RuntimeError("Could not locate decoder layers for last-hidden hook")
+    layers = candidates[0]
+    print(f"[hook] last decoder layer among {len(layers)} layers", flush=True)
+    handle = layers[-1].register_forward_hook(_hook)
+    return bucket, handle
+
+
+def pooled_last_hidden(h: torch.Tensor) -> torch.Tensor:
     """Mean-pool last hidden state → [B, H] for aux heads."""
-    h = out.hidden_states[-1]  # [B, T, H]
     return h.mean(dim=1)
 
 
@@ -138,13 +189,17 @@ def main():
     ap.add_argument("--train-jsonl", required=True)
     ap.add_argument("--video-root", required=True)
     ap.add_argument("--output-dir", required=True)
-    ap.add_argument("--max-frames", type=int, default=128)
+    ap.add_argument("--max-frames", type=int, default=8,
+                    help="Cap concatenated frames after downsample (default 8)")
+    ap.add_argument("--max-pixels", type=int, default=128*28*28,
+                    help="Per-frame/video pixel budget for Qwen VL processor")
+    ap.add_argument("--min-pixels", type=int, default=4*28*28)
     ap.add_argument("--epochs", type=float, default=2.0)
     ap.add_argument("--batch-size", type=int, default=1)
     ap.add_argument("--grad-accum", type=int, default=8)
     ap.add_argument("--lr", type=float, default=1e-4)
-    ap.add_argument("--lora-r", type=int, default=64)
-    ap.add_argument("--lora-alpha", type=int, default=128)
+    ap.add_argument("--lora-r", type=int, default=16)
+    ap.add_argument("--lora-alpha", type=int, default=32)
     ap.add_argument("--lambda-halt", type=float, default=0.5,
                     help="Weight for explicit CONTINUE/HALT CE")
     ap.add_argument("--lambda-type", type=float, default=1.0,
@@ -164,6 +219,12 @@ def main():
 
     print(f"[load] {args.model_path}", flush=True)
     processor = AutoProcessor.from_pretrained(args.model_path, trust_remote_code=True)
+    configure_processor_pixels(processor, args.max_pixels, args.min_pixels)
+    print(
+        f"[vision] max_frames={args.max_frames} max_pixels={args.max_pixels} "
+        f"min_pixels={args.min_pixels}",
+        flush=True,
+    )
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         args.model_path,
         torch_dtype=torch.bfloat16,
@@ -174,7 +235,7 @@ def main():
     model.config.use_cache = False
 
     targets = find_lora_targets(model)
-    print(f"[lora] targets={targets}", flush=True)
+    print(f"[lora] targets={targets} r={args.lora_r}", flush=True)
     model = get_peft_model(
         model,
         LoraConfig(
@@ -192,6 +253,11 @@ def main():
 
     model.enable_input_require_grads()
     model.gradient_checkpointing_enable()
+    # Needed so checkpointing + LoRA backward keeps grads on inputs
+    if hasattr(model, "enable_input_require_grads"):
+        model.enable_input_require_grads()
+
+    last_h, last_h_handle = attach_last_hidden_hook(model)
 
     ds = ProtoPrefixDataset(args.train_jsonl, args.video_root, args.max_frames)
 
@@ -239,7 +305,8 @@ def main():
             batch.pop("halt_horizon", None)
             batch = {k: v.to(device) if torch.is_tensor(v) else v for k, v in batch.items()}
 
-            out = model(**batch, output_hidden_states=True)
+            last_h.pop("h", None)
+            out = model(**batch, output_hidden_states=False)
             lm_loss = out.loss
             if lm_loss is None or not torch.isfinite(lm_loss):
                 print("[warn] bad lm_loss, skip", flush=True)
@@ -247,7 +314,12 @@ def main():
                 micro += 1
                 continue
 
-            z = pooled_last_hidden(out).to(torch.bfloat16)
+            if "h" not in last_h:
+                print("[warn] missing last hidden, skip", flush=True)
+                optim.zero_grad(set_to_none=True)
+                micro += 1
+                continue
+            z = pooled_last_hidden(last_h["h"]).to(torch.bfloat16)
             l_halt = F.cross_entropy(halt_head(z).float(), halt_y)
             mask = type_y >= 0
             if mask.any():
@@ -266,6 +338,7 @@ def main():
                 continue
 
             (total / args.grad_accum).backward()
+            last_h.pop("h", None)
             micro += 1
             if micro % args.grad_accum == 0:
                 torch.nn.utils.clip_grad_norm_(lora_params + head_params, 0.5)
@@ -275,6 +348,8 @@ def main():
                 gstep += 1
                 if gstep % args.log_every == 0:
                     mem = torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else 0
+                    if torch.cuda.is_available():
+                        torch.cuda.reset_peak_memory_stats()
                     msg = {
                         "step": gstep,
                         "loss": float(total),
@@ -310,6 +385,8 @@ def main():
                         "model_path": args.model_path,
                         "global_step": gstep,
                         "max_frames": args.max_frames,
+                        "max_pixels": args.max_pixels,
+                        "min_pixels": args.min_pixels,
                         "loss": "L_lm + λ_halt L_halt + λ_type L_type",
                         "error_types": list(ERROR_TYPES),
                     }, indent=2))
@@ -319,6 +396,7 @@ def main():
         if gstep >= total_steps:
             break
 
+    last_h_handle.remove()
     model.save_pretrained(args.output_dir)
     processor.save_pretrained(args.output_dir)
     torch.save({
@@ -334,6 +412,8 @@ def main():
         "model_path": args.model_path,
         "global_step": gstep,
         "max_frames": args.max_frames,
+        "max_pixels": args.max_pixels,
+        "min_pixels": args.min_pixels,
         "loss": "L_lm + λ_halt L_halt + λ_type L_type",
         "error_types": list(ERROR_TYPES),
     }, indent=2))
