@@ -20,38 +20,63 @@ import json
 import math
 import os
 import random
+import signal
+import time
 from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from decord import VideoReader, cpu
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, PeftModel, get_peft_model
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
+from frame_cache import load_frames_cached
 from protocol_prompt import ERROR_TYPES
 
-
-def load_frames(video_path: str, indices: list[int]) -> np.ndarray:
-    vr = VideoReader(video_path, ctx=cpu(0), num_threads=2)
-    n = len(vr)
-    idxs = [min(max(i, 0), n - 1) for i in indices]
-    return vr.get_batch(idxs).asnumpy()
+# Set by USR1/TERM trap so the train loop can checkpoint and exit cleanly.
+_STOP_REQUESTED = False
 
 
-def load_concat_segments(video_root: str, segments: list[dict]) -> np.ndarray:
-    """Concatenate frames from multiple full-protocol videos into one array."""
+def _request_stop(signum, _frame):
+    global _STOP_REQUESTED
+    _STOP_REQUESTED = True
+    print(f"[signal] got {signum}; will stop after next optimizer step", flush=True)
+
+
+def load_concat_segments(
+    video_root: str,
+    segments: list[dict],
+    cache_dir: str | None = None,
+) -> tuple[np.ndarray, int, int]:
+    """Concatenate frames; returns (frames, n_hits, n_misses)."""
     parts = []
+    hits = misses = 0
     for seg in segments:
         path = os.path.join(video_root, seg["video"])
-        parts.append(load_frames(path, seg["frame_indices"]))
-    return np.concatenate(parts, axis=0)
+        frames, hit = load_frames_cached(
+            path,
+            list(seg["frame_indices"]),
+            cache_dir=cache_dir,
+            video_rel=seg["video"],
+        )
+        parts.append(frames)
+        if hit:
+            hits += 1
+        else:
+            misses += 1
+    return np.concatenate(parts, axis=0), hits, misses
 
 
 class ProtoPrefixDataset(Dataset):
-    def __init__(self, jsonl_path: str, video_root: str, max_frames: int = 128):
+    def __init__(
+        self,
+        jsonl_path: str,
+        video_root: str,
+        max_frames: int = 128,
+        frame_cache_dir: str | None = None,
+    ):
         self.rows = []
         with open(jsonl_path) as f:
             for line in f:
@@ -59,16 +84,29 @@ class ProtoPrefixDataset(Dataset):
                     self.rows.append(json.loads(line))
         self.video_root = video_root
         self.max_frames = max_frames
-        print(f"[data] {jsonl_path}: {len(self.rows)} samples", flush=True)
+        self.frame_cache_dir = frame_cache_dir
+        n_cache = 0
+        if frame_cache_dir and Path(frame_cache_dir).exists():
+            n_cache = sum(1 for _ in Path(frame_cache_dir).glob("*.npy"))
+        print(
+            f"[data] {jsonl_path}: {len(self.rows)} samples "
+            f"frame_cache={frame_cache_dir} npy={n_cache}",
+            flush=True,
+        )
 
     def __len__(self):
         return len(self.rows)
 
     def __getitem__(self, i):
         rec = self.rows[i]
-        frames = load_concat_segments(self.video_root, rec["segments"])
+        t0 = time.perf_counter()
+        frames, hits, misses = load_concat_segments(
+            self.video_root,
+            rec["segments"],
+            cache_dir=self.frame_cache_dir,
+        )
+        decode_wait = time.perf_counter() - t0
         if len(frames) > self.max_frames:
-            # keep last frames (error evidence is at the end for HALT)
             frames = frames[-self.max_frames:]
         return {
             "frames": frames,
@@ -79,6 +117,9 @@ class ProtoPrefixDataset(Dataset):
             "loss_weight": float(rec.get("loss_weight", 1.0)),
             "halt_horizon": rec.get("halt_horizon"),
             "id": rec["id"],
+            "batch_wait": decode_wait,
+            "cache_hits": hits,
+            "cache_misses": misses,
         }
 
 
@@ -99,13 +140,25 @@ def collate_one(batch, processor):
     text = processor.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=False
     )
-    inputs = processor(text=[text], videos=[frames], padding=True, return_tensors="pt")
+    # Do not pass return_tensors/fps — some Qwen processor builds reject them.
+    raw = processor(text=[text], videos=[frames], padding=True)
+    inputs = {}
+    for k, v in raw.items():
+        if torch.is_tensor(v):
+            inputs[k] = v
+        elif isinstance(v, np.ndarray):
+            inputs[k] = torch.from_numpy(v)
+        else:
+            inputs[k] = torch.as_tensor(v)
 
     user_only = [{"role": "user", "content": messages[0]["content"]}]
     prompt_text = processor.apply_chat_template(
         user_only, tokenize=False, add_generation_prompt=True
     )
-    prompt_ids = processor(text=[prompt_text], videos=[frames], return_tensors="pt")["input_ids"]
+    prompt_out = processor(text=[prompt_text], videos=[frames])
+    prompt_ids = prompt_out["input_ids"]
+    if not torch.is_tensor(prompt_ids):
+        prompt_ids = torch.as_tensor(prompt_ids)
     labels = inputs["input_ids"].clone()
     labels[:, : prompt_ids.shape[1]] = -100
     inputs["labels"] = labels
@@ -113,7 +166,92 @@ def collate_one(batch, processor):
     inputs["type_id"] = torch.tensor([b0["type_id"]], dtype=torch.long)
     inputs["loss_weight"] = torch.tensor([b0["loss_weight"]], dtype=torch.float32)
     inputs["halt_horizon"] = b0.get("halt_horizon")
+    inputs["batch_wait"] = float(b0.get("batch_wait", 0.0))
+    inputs["cache_hits"] = int(b0.get("cache_hits", 0))
+    inputs["cache_misses"] = int(b0.get("cache_misses", 0))
     return inputs
+
+
+def find_latest_ckpt(output_dir: Path) -> Path | None:
+    latest = output_dir / "latest"
+    if (latest / "aux_heads.bin").exists() or (latest / "adapter_config.json").exists():
+        return latest
+    cands = sorted(
+        output_dir.glob("checkpoint-*"),
+        key=lambda p: int(p.name.split("-")[-1]) if p.name.split("-")[-1].isdigit() else -1,
+    )
+    return cands[-1] if cands else None
+
+
+def save_checkpoint(
+    output_dir: Path,
+    model,
+    processor,
+    halt_head,
+    type_head,
+    optim,
+    sched,
+    gstep: int,
+    base_model: str,
+    max_frames: int,
+    max_pixels: int,
+    min_pixels: int,
+    tag: str | None = None,
+):
+    name = tag or f"checkpoint-{gstep}"
+    ckpt = output_dir / name
+    ckpt.mkdir(parents=True, exist_ok=True)
+    model.save_pretrained(str(ckpt))
+    processor.save_pretrained(str(ckpt))
+    torch.save(
+        {
+            "halt_head": halt_head.state_dict(),
+            "type_head": type_head.state_dict(),
+            "error_types": list(ERROR_TYPES),
+            "global_step": gstep,
+            "base_model": base_model,
+            "optim": optim.state_dict(),
+            "sched": sched.state_dict(),
+        },
+        ckpt / "aux_heads.bin",
+    )
+    (ckpt / "config_task.json").write_text(
+        json.dumps(
+            {
+                "task": "finebio_protocol_prefix_stream_sft",
+                "level": "protocol",
+                "model_path": base_model,
+                "global_step": gstep,
+                "max_frames": max_frames,
+                "max_pixels": max_pixels,
+                "min_pixels": min_pixels,
+                "loss": "L_lm + λ_halt L_halt + λ_type L_type",
+                "error_types": list(ERROR_TYPES),
+            },
+            indent=2,
+        )
+    )
+    # Keep a rolling "latest" pointer for auto-resume (copy via save again if tag!=latest)
+    if name != "latest":
+        latest = output_dir / "latest"
+        latest.mkdir(parents=True, exist_ok=True)
+        model.save_pretrained(str(latest))
+        processor.save_pretrained(str(latest))
+        torch.save(
+            {
+                "halt_head": halt_head.state_dict(),
+                "type_head": type_head.state_dict(),
+                "error_types": list(ERROR_TYPES),
+                "global_step": gstep,
+                "base_model": base_model,
+                "optim": optim.state_dict(),
+                "sched": sched.state_dict(),
+            },
+            latest / "aux_heads.bin",
+        )
+        (latest / "config_task.json").write_text((ckpt / "config_task.json").read_text())
+    print(f"[ckpt] {ckpt}", flush=True)
+    return ckpt
 
 
 def find_lora_targets(model):
@@ -189,6 +327,8 @@ def main():
     ap.add_argument("--train-jsonl", required=True)
     ap.add_argument("--video-root", required=True)
     ap.add_argument("--output-dir", required=True)
+    ap.add_argument("--frame-cache-dir", default=None,
+                    help="Prefetched uint8 clips; skips VideoReader open on hit")
     ap.add_argument("--max-frames", type=int, default=8,
                     help="Cap concatenated frames after downsample (default 8)")
     ap.add_argument("--max-pixels", type=int, default=128*28*28,
@@ -206,23 +346,31 @@ def main():
                     help="Weight for explicit mistake-type CE (HALT only)")
     ap.add_argument("--log-every", type=int, default=10)
     ap.add_argument("--save-every", type=int, default=200)
-    ap.add_argument("--num-workers", type=int, default=4)
+    ap.add_argument("--num-workers", type=int, default=8)
+    ap.add_argument("--prefetch-factor", type=int, default=2)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--max-steps", type=int, default=0)
+    ap.add_argument("--resume", default="auto",
+                    help="auto|none|/path/to/ckpt  (auto = latest or newest checkpoint-*)")
     args = ap.parse_args()
 
     assert args.batch_size == 1
     random.seed(args.seed)
     torch.manual_seed(args.seed)
-    os.makedirs(args.output_dir, exist_ok=True)
+    out_dir = Path(args.output_dir)
+    os.makedirs(out_dir, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Graceful stop for SLURM --signal=B:USR1@90 / util-kill TERM
+    signal.signal(signal.SIGUSR1, _request_stop)
+    signal.signal(signal.SIGTERM, _request_stop)
 
     print(f"[load] {args.model_path}", flush=True)
     processor = AutoProcessor.from_pretrained(args.model_path, trust_remote_code=True)
     configure_processor_pixels(processor, args.max_pixels, args.min_pixels)
     print(
         f"[vision] max_frames={args.max_frames} max_pixels={args.max_pixels} "
-        f"min_pixels={args.min_pixels}",
+        f"min_pixels={args.min_pixels} frame_cache={args.frame_cache_dir}",
         flush=True,
     )
     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
@@ -234,15 +382,26 @@ def main():
     )
     model.config.use_cache = False
 
-    targets = find_lora_targets(model)
-    print(f"[lora] targets={targets} r={args.lora_r}", flush=True)
-    model = get_peft_model(
-        model,
-        LoraConfig(
-            r=args.lora_r, lora_alpha=args.lora_alpha, lora_dropout=0.05,
-            target_modules=targets, bias="none", task_type="CAUSAL_LM",
-        ),
-    )
+    resume_dir = None
+    if args.resume == "auto":
+        resume_dir = find_latest_ckpt(out_dir)
+    elif args.resume and args.resume not in {"none", "None", ""}:
+        resume_dir = Path(args.resume)
+
+    if resume_dir is not None and (resume_dir / "adapter_config.json").exists():
+        print(f"[resume] LoRA from {resume_dir}", flush=True)
+        model = PeftModel.from_pretrained(model, str(resume_dir), is_trainable=True)
+    else:
+        targets = find_lora_targets(model)
+        print(f"[lora] targets={targets} r={args.lora_r}", flush=True)
+        model = get_peft_model(
+            model,
+            LoraConfig(
+                r=args.lora_r, lora_alpha=args.lora_alpha, lora_dropout=0.05,
+                target_modules=targets, bias="none", task_type="CAUSAL_LM",
+            ),
+        )
+
     for n, p in model.named_parameters():
         if "visual" in n:
             p.requires_grad = False
@@ -253,22 +412,33 @@ def main():
 
     model.enable_input_require_grads()
     model.gradient_checkpointing_enable()
-    # Needed so checkpointing + LoRA backward keeps grads on inputs
     if hasattr(model, "enable_input_require_grads"):
         model.enable_input_require_grads()
 
     last_h, last_h_handle = attach_last_hidden_hook(model)
 
-    ds = ProtoPrefixDataset(args.train_jsonl, args.video_root, args.max_frames)
+    ds = ProtoPrefixDataset(
+        args.train_jsonl,
+        args.video_root,
+        args.max_frames,
+        frame_cache_dir=args.frame_cache_dir,
+    )
 
     def _collate(batch):
         return collate_one(batch, processor)
 
-    dl = DataLoader(
-        ds, batch_size=1, shuffle=True, num_workers=args.num_workers,
-        collate_fn=_collate, pin_memory=True, drop_last=True,
+    dl_kwargs = dict(
+        batch_size=1,
+        shuffle=True,
+        num_workers=args.num_workers,
+        collate_fn=_collate,
+        pin_memory=False,  # avoid host RAM spikes with video batches
+        drop_last=True,
         persistent_workers=args.num_workers > 0,
     )
+    if args.num_workers > 0:
+        dl_kwargs["prefetch_factor"] = args.prefetch_factor
+    dl = DataLoader(ds, **dl_kwargs)
 
     lora_params = [p for p in model.parameters() if p.requires_grad]
     head_params = list(halt_head.parameters()) + list(type_head.parameters())
@@ -288,23 +458,52 @@ def main():
         else 0.5 * (1 + math.cos(math.pi * (s - warmup) / max(1, total_steps - warmup))),
     )
 
+    gstep = 0
+    if resume_dir is not None and (resume_dir / "aux_heads.bin").exists():
+        state = torch.load(resume_dir / "aux_heads.bin", map_location="cpu", weights_only=False)
+        halt_head.load_state_dict(state["halt_head"])
+        type_head.load_state_dict(state["type_head"])
+        gstep = int(state.get("global_step", 0))
+        if "optim" in state:
+            try:
+                optim.load_state_dict(state["optim"])
+            except Exception as e:
+                print(f"[resume] optim skip: {e}", flush=True)
+        if "sched" in state:
+            try:
+                sched.load_state_dict(state["sched"])
+            except Exception as e:
+                print(f"[resume] sched skip: {e}", flush=True)
+        print(f"[resume] aux_heads step={gstep} from {resume_dir}", flush=True)
+
     print(
         f"[train] protocol-level SFT  L=L_lm+{args.lambda_halt}*L_halt+{args.lambda_type}*L_type  "
-        f"steps={total_steps} error_types={list(ERROR_TYPES)}",
+        f"steps={total_steps} start={gstep} error_types={list(ERROR_TYPES)}",
         flush=True,
     )
-    logf = open(Path(args.output_dir) / "train_log.jsonl", "a")
-    gstep = micro = 0
+    logf = open(out_dir / "train_log.jsonl", "a")
+    micro = 0
+    wait_sum = step_sum = 0.0
+    hit_sum = miss_sum = wait_n = 0
     optim.zero_grad(set_to_none=True)
+    finished = False
 
     for epoch in range(math.ceil(args.epochs)):
+        if gstep >= total_steps or _STOP_REQUESTED:
+            break
         for batch in dl:
+            if gstep >= total_steps or _STOP_REQUESTED:
+                break
+            batch_wait = float(batch.pop("batch_wait", 0.0))
+            hit_sum += int(batch.pop("cache_hits", 0))
+            miss_sum += int(batch.pop("cache_misses", 0))
             halt_y = batch.pop("halt_label").to(device)
             type_y = batch.pop("type_id").to(device)
             w = batch.pop("loss_weight").to(device).float().mean()
             batch.pop("halt_horizon", None)
             batch = {k: v.to(device) if torch.is_tensor(v) else v for k, v in batch.items()}
 
+            t_step = time.perf_counter()
             last_h.pop("h", None)
             out = model(**batch, output_hidden_states=False)
             lm_loss = out.loss
@@ -327,8 +526,6 @@ def main():
             else:
                 l_type = torch.zeros((), device=device)
 
-            # Early detection: L = w(k) * (L_lm + λ_halt L_halt + λ_type L_type)
-            # w(1) high (prefer 1-frame), w(5) also high (must detect by 5).
             base = lm_loss + args.lambda_halt * l_halt + args.lambda_type * l_type
             total = w * base
             if not torch.isfinite(total):
@@ -340,6 +537,10 @@ def main():
             (total / args.grad_accum).backward()
             last_h.pop("h", None)
             micro += 1
+            wait_sum += batch_wait
+            step_sum += time.perf_counter() - t_step
+            wait_n += 1
+
             if micro % args.grad_accum == 0:
                 torch.nn.utils.clip_grad_norm_(lora_params + head_params, 0.5)
                 optim.step()
@@ -350,6 +551,11 @@ def main():
                     mem = torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else 0
                     if torch.cuda.is_available():
                         torch.cuda.reset_peak_memory_stats()
+                    avg_wait = wait_sum / max(wait_n, 1)
+                    avg_step = step_sum / max(wait_n, 1)
+                    hit_rate = hit_sum / max(hit_sum + miss_sum, 1)
+                    wait_sum = step_sum = 0.0
+                    hit_sum = miss_sum = wait_n = 0
                     msg = {
                         "step": gstep,
                         "loss": float(total),
@@ -358,67 +564,70 @@ def main():
                         "type": float(l_type),
                         "w": float(w),
                         "mem_gb": round(mem, 2),
+                        "batch_wait_s": round(avg_wait, 3),
+                        "step_s": round(avg_step, 3),
+                        "hit_rate": round(hit_rate, 3),
                     }
                     print(
                         f"[step {gstep}/{total_steps}] loss={total:.4f} "
                         f"lm={lm_loss:.4f} halt={l_halt:.4f} type={l_type:.4f} "
-                        f"w={float(w):.2f} mem={mem:.1f}GB",
+                        f"w={float(w):.2f} mem={mem:.1f}GB "
+                        f"wait={avg_wait:.3f}s step={avg_step:.3f}s "
+                        f"hit_rate={hit_rate:.2f}",
                         flush=True,
                     )
                     logf.write(json.dumps(msg) + "\n")
                     logf.flush()
-                if gstep % args.save_every == 0 or gstep >= total_steps:
-                    ckpt = Path(args.output_dir) / f"checkpoint-{gstep}"
-                    ckpt.mkdir(parents=True, exist_ok=True)
-                    model.save_pretrained(str(ckpt))
-                    processor.save_pretrained(str(ckpt))
-                    torch.save({
-                        "halt_head": halt_head.state_dict(),
-                        "type_head": type_head.state_dict(),
-                        "error_types": list(ERROR_TYPES),
-                        "global_step": gstep,
-                        "base_model": args.model_path,
-                    }, ckpt / "aux_heads.bin")
-                    (ckpt / "config_task.json").write_text(json.dumps({
-                        "task": "finebio_protocol_prefix_stream_sft",
-                        "level": "protocol",
-                        "model_path": args.model_path,
-                        "global_step": gstep,
-                        "max_frames": args.max_frames,
-                        "max_pixels": args.max_pixels,
-                        "min_pixels": args.min_pixels,
-                        "loss": "L_lm + λ_halt L_halt + λ_type L_type",
-                        "error_types": list(ERROR_TYPES),
-                    }, indent=2))
-                    print(f"[ckpt] {ckpt}", flush=True)
+                if gstep % args.save_every == 0 or gstep >= total_steps or _STOP_REQUESTED:
+                    save_checkpoint(
+                        out_dir, model, processor, halt_head, type_head, optim, sched,
+                        gstep, args.model_path, args.max_frames, args.max_pixels, args.min_pixels,
+                    )
                 if gstep >= total_steps:
+                    finished = True
                     break
-        if gstep >= total_steps:
+                if _STOP_REQUESTED:
+                    print(f"[signal] stopping at step={gstep}", flush=True)
+                    break
+        if finished or _STOP_REQUESTED or gstep >= total_steps:
             break
 
     last_h_handle.remove()
-    model.save_pretrained(args.output_dir)
-    processor.save_pretrained(args.output_dir)
-    torch.save({
-        "halt_head": halt_head.state_dict(),
-        "type_head": type_head.state_dict(),
-        "error_types": list(ERROR_TYPES),
-        "global_step": gstep,
-        "base_model": args.model_path,
-    }, Path(args.output_dir) / "aux_heads.bin")
-    (Path(args.output_dir) / "config_task.json").write_text(json.dumps({
-        "task": "finebio_protocol_prefix_stream_sft",
-        "level": "protocol",
-        "model_path": args.model_path,
-        "global_step": gstep,
-        "max_frames": args.max_frames,
-        "max_pixels": args.max_pixels,
-        "min_pixels": args.min_pixels,
-        "loss": "L_lm + λ_halt L_halt + λ_type L_type",
-        "error_types": list(ERROR_TYPES),
-    }, indent=2))
+    if finished:
+        model.save_pretrained(str(out_dir))
+        processor.save_pretrained(str(out_dir))
+        torch.save({
+            "halt_head": halt_head.state_dict(),
+            "type_head": type_head.state_dict(),
+            "error_types": list(ERROR_TYPES),
+            "global_step": gstep,
+            "base_model": args.model_path,
+            "optim": optim.state_dict(),
+            "sched": sched.state_dict(),
+        }, out_dir / "aux_heads.bin")
+        (out_dir / "config_task.json").write_text(json.dumps({
+            "task": "finebio_protocol_prefix_stream_sft",
+            "level": "protocol",
+            "model_path": args.model_path,
+            "global_step": gstep,
+            "max_frames": args.max_frames,
+            "max_pixels": args.max_pixels,
+            "min_pixels": args.min_pixels,
+            "loss": "L_lm + λ_halt L_halt + λ_type L_type",
+            "error_types": list(ERROR_TYPES),
+        }, indent=2))
+        (out_dir / "TRAINING_DONE").write_text(f"step={gstep}\n")
+        print(f"[done] {out_dir} step={gstep}", flush=True)
+    else:
+        # Ensure latest exists even if we stopped mid-interval
+        if not (out_dir / "latest" / "aux_heads.bin").exists() or _STOP_REQUESTED:
+            save_checkpoint(
+                out_dir, model, processor, halt_head, type_head, optim, sched,
+                gstep, args.model_path, args.max_frames, args.max_pixels, args.min_pixels,
+                tag="latest",
+            )
+        print(f"[paused] {out_dir} step={gstep} (resume next segment)", flush=True)
     logf.close()
-    print(f"[done] {args.output_dir} step={gstep}", flush=True)
 
 
 if __name__ == "__main__":
