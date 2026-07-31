@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH -J expvid_pipe
 #SBATCH -c 8
-#SBATCH -t 06:00:00
+#SBATCH -t 12:00:00
 #SBATCH --mem=96G
 #SBATCH --gres=gpu:1
 #SBATCH --account=torch_pr_674_tandon_advanced
