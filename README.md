@@ -26,11 +26,20 @@ Repo: [Nemo0412/VLM4WetExperiment](https://github.com/Nemo0412/VLM4WetExperiment
 
 **Example miss** (`test_r0_neg_wrong_after_6_got3`): P1–P6 correct then wrong P3 instead of P7; model said `CONTINUE` for *k*=1…5. Frames under `FineBioQwenStream/miss_case_frames/`.
 
-### B. ExpVid — image + caption SSL (in progress)
+### B. ExpVid — image + caption SSL
 
-**Task.** Mid-frame image + ASR caption pairs from ExpVid level-1; zero-shot MCQ (image / image+caption); LoRA caption NTP SSL (≤2000 pairs); re-eval.
+**Intended task.** Image → generate what is happening (**caption / ASR narration**), trained with next-token prediction. Caption-generation metrics not wired yet.
 
-**Code:** [`ExpVid/`](ExpVid/) — `sbatch ExpVid/run_pipeline_a100.sbatch`. Data lives on scratch (not in git).
+**Done (proxy eval).** Same pairs; evaluate with ExpVid level-1 **MCQ** (n=4035). Job `15066998` completed ~1.7 h.
+
+| Setting | Accuracy |
+|---------|----------|
+| Zeroshot · image only | **41.98%** |
+| Zeroshot · image + caption | **89.34%** |
+| Post-SSL · image only | **48.65%** |
+| Post-SSL · image + caption | **91.45%** |
+
+**Code:** [`ExpVid/`](ExpVid/) — details and per-task numbers in [`ExpVid/README.md`](ExpVid/README.md). Data on scratch (not in git).
 
 ### C. Legacy LLaVA-NeXT-Video FineBio pipeline
 
