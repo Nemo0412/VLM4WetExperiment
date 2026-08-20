@@ -1,0 +1,30 @@
+model:
+  name: "Qwen/Qwen2.5-VL-7B-Instruct"
+  lora_rank: 32
+  lora_alpha: 64
+  lora_dropout: 0.05
+  lora_target_modules: ["q_proj", "k_proj", "v_proj", "o_proj"]
+  image_max_pixels: 112896
+  image_min_pixels: 50176
+
+data:
+  train_jsonl: "/scratch/ll5914/Labos/WearableAI/data/sft/train.jsonl"
+  val_jsonl: "/scratch/ll5914/Labos/WearableAI/data/sft/val.jsonl"
+  video_folder: "/scratch/ll5914/datasets/wearable-ai/egoproactive/val"
+  frames_per_interval: 16
+  max_frames: 32
+  max_history_turns: 4
+  num_workers: 2
+
+training:
+  output_dir: "/scratch/ll5914/Labos/WearableAI/outputs/lora_7b"
+  learning_rate: 1.0e-5
+  weight_decay: 0.1
+  warmup_steps: 100
+  num_epochs: 2
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  max_seq_length: 8192
+  gradient_checkpointing: true
+  eval_steps: 250
+  seed: 42

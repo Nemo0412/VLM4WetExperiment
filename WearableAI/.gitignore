@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.env
+.env.*
+*.pem
+*.key
+.hf_token
+*.log
+.DS_Store
+.vscode/
+.idea/

@@ -1,6 +1,6 @@
 # VLM4WetExperiment
 
-Vision–language models for **wet-lab protocol understanding**: compliance / streaming monitoring on [FineBio](https://arxiv.org/abs/2402.00293), plus image–caption SSL on [ExpVid](https://huggingface.co/datasets/OpenGVLab/ExpVid).
+Vision–language models for **wet-lab protocol understanding**: compliance / streaming monitoring on [FineBio](https://arxiv.org/abs/2402.00293), image–caption SSL on [ExpVid](https://huggingface.co/datasets/OpenGVLab/ExpVid), and proactive **when2prompt** on [Wearable-AI EgoProactive](https://huggingface.co/datasets/facebook/wearable-ai).
 
 Repo: [Nemo0412/VLM4WetExperiment](https://github.com/Nemo0412/VLM4WetExperiment)
 
@@ -45,6 +45,22 @@ Repo: [Nemo0412/VLM4WetExperiment](https://github.com/Nemo0412/VLM4WetExperiment
 
 Earlier track: fine-tune **LLaVA-NeXT-Video-7B** on FineBio for scene / compliance with native multi-frame input (default 32 frames). Scripts remain at repo root (`train_finebio_video.py`, `scripts/prepare_finebio_video.py`, …). Details below.
 
+### D. WearableAI — EgoProactive when2prompt (Qwen2.5-VL)
+
+**Task.** At each ~8s chunk, decide `$interrupt$<guidance>` vs `$silent$` using the **official Wearable-AI starter_kit** proactive protocol (cumulative video, gold dialog history, Macro F1 / G-mean F1).
+
+**Zero-shot (700 videos / 9935 decisions):**
+
+| Model | Accuracy | Macro F1 | G-mean F1 | Pred interrupt |
+|-------|----------|----------|-----------|----------------|
+| Qwen2.5-VL-3B | 0.481 | 0.389 | 0.308 | ~85% |
+| Qwen2.5-VL-7B | 0.461 | 0.459 | 0.458 | ~52% |
+| Qwen2.5-VL-32B | 0.459 | 0.370 | 0.283 | ~84% |
+
+LoRA finetune scripts included (official-protocol SFT + eval). Videos and HF starter_kit stay on scratch, not in git.
+
+**Code:** [`WearableAI/`](WearableAI/) — full setup, Slurm jobs, and finetune pipeline in [`WearableAI/README.md`](WearableAI/README.md).
+
 ---
 
 ## Repository layout
@@ -52,6 +68,7 @@ Earlier track: fine-tune **LLaVA-NeXT-Video-7B** on FineBio for scene / complian
 ```
 FineBioQwenStream/          # Qwen2.5-VL protocol streaming (current focus)
 ExpVid/                     # ExpVid image–caption SSL + MCQ eval
+WearableAI/                 # Wearable-AI EgoProactive when2prompt zero-shot + LoRA
 scripts/                    # FineBio download / LLaVA data prep
 train_finebio_video.py      # LLaVA-NeXT-Video LoRA + aux heads
 train_finebio_ssl.py        # legacy LLaVA-1.5 trainer
@@ -81,6 +98,26 @@ sbatch FineBioQwenStream/run_zeroshot_then_train_a100.sbatch
 # Natural streaming eval after SFT
 sbatch FineBioQwenStream/run_eval_natural_stream_a100.sbatch
 ```
+
+---
+
+## WearableAI (quickstart)
+
+```bash
+cd WearableAI
+# Download gated egoproactive videos (accept HF terms first)
+python download_egoproactive.py
+
+# Zero-shot eval (official starter_kit metrics)
+sbatch --export=ALL,LLM_MODEL=Qwen/Qwen2.5-VL-7B-Instruct run_when2prompt_qwen.sbatch
+
+# LoRA finetune pipeline
+sbatch run_prepare_sft.sbatch
+sbatch run_finetune_qwen.sbatch
+sbatch --export=ALL,ADAPTER=/scratch/$USER/Labos/WearableAI/outputs/lora_3b/best run_eval_finetuned.sbatch
+```
+
+See [`WearableAI/README.md`](WearableAI/README.md) for paths, zero-shot details, and config knobs.
 
 ---
 
