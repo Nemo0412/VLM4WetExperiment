@@ -67,6 +67,8 @@ LoRA finetune scripts included (official-protocol SFT + eval). Videos and HF sta
 
 ```
 FineBioQwenStream/          # Qwen2.5-VL protocol streaming (current focus)
+FineBioWhen2See/            # viewpoint-compensated frame gate
+LabGate/                    # 3B Judger → optional 32B wet-lab copilot
 ExpVid/                     # ExpVid image–caption SSL + MCQ eval
 WearableAI/                 # Wearable-AI EgoProactive when2prompt zero-shot + LoRA
 scripts/                    # FineBio download / LLaVA data prep

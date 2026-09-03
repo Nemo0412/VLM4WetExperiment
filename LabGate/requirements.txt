@@ -1,0 +1,9 @@
+accelerate
+decord
+numpy
+opencv-python-headless
+qwen-vl-utils
+torch
+transformers>=4.49.0
+# Optional for raw audio input:
+# openai-whisper
