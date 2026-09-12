@@ -1,0 +1,101 @@
+{
+  "native_original_prompt": {
+    "n": 25,
+    "fired": 0,
+    "tp": 0,
+    "fp": 0,
+    "fn": 14,
+    "tn": 11,
+    "raw_counts": {
+      "NO.": 24,
+      "NO. reason=none": 1
+    },
+    "reason_counts": {
+      "none": 25
+    }
+  },
+  "native_bio_prompt": {
+    "n": 25,
+    "fired": 0,
+    "tp": 0,
+    "fp": 0,
+    "fn": 14,
+    "tn": 11,
+    "raw_counts": {
+      "NO.": 25
+    },
+    "reason_counts": {
+      "none": 25
+    }
+  },
+  "native_bio_no_reprojection": {
+    "n": 25,
+    "fired": 1,
+    "tp": 1,
+    "fp": 0,
+    "fn": 13,
+    "tn": 11,
+    "raw_counts": {
+      "NO.": 15,
+      "NO. reason=none": 9,
+      "YES. reason=action_error": 1
+    },
+    "reason_counts": {
+      "none": 24,
+      "action_error": 1
+    }
+  },
+  "native_bio_black": {
+    "n": 25,
+    "fired": 0,
+    "tp": 0,
+    "fp": 0,
+    "fn": 14,
+    "tn": 11,
+    "raw_counts": {
+      "NO.": 25
+    },
+    "reason_counts": {
+      "none": 25
+    }
+  },
+  "native_bio_explicit_text_probe": {
+    "n": 25,
+    "fired": 7,
+    "tp": 7,
+    "fp": 0,
+    "fn": 7,
+    "tn": 11,
+    "raw_counts": {
+      "NO.": 18,
+      "YES. reason=safety": 2,
+      "YES. reason=action_error": 3,
+      "YES. reason=user_query": 1,
+      "YES. reason=next_step": 1
+    },
+    "reason_counts": {
+      "none": 18,
+      "safety": 2,
+      "action_error": 3,
+      "user_query": 1,
+      "next_step": 1
+    }
+  },
+  "native_original_question_probe": {
+    "n": 25,
+    "fired": 2,
+    "tp": 1,
+    "fp": 1,
+    "fn": 13,
+    "tn": 10,
+    "raw_counts": {
+      "NO.": 20,
+      "NO. reason=none": 3,
+      "YES. reason=user_query": 2
+    },
+    "reason_counts": {
+      "none": 23,
+      "user_query": 2
+    }
+  }
+}

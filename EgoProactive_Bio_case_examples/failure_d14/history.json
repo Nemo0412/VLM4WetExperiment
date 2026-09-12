@@ -1,0 +1,22 @@
+[
+  {
+    "role": "user",
+    "content": "Cell passaging"
+  },
+  {
+    "role": "assistant",
+    "content": "$interrupt$The cabinet sash is raised too high, which may compromise aseptic conditions. Lower it to the recommended working height before continuing."
+  },
+  {
+    "role": "assistant",
+    "content": "$interrupt$Now add PBS to rinse the cells, then discard the rinse."
+  },
+  {
+    "role": "assistant",
+    "content": "$interrupt$Do not leave the flask dry and exposed. Add PBS immediately to rinse the cells."
+  },
+  {
+    "role": "assistant",
+    "content": "$interrupt$Add trypsin to cover the cell layer."
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "completed_at_utc": "2026-09-07T01:40:08Z",
+  "expert": "/scratch/ll5914/huggingface/hub/models--Qwen--Qwen2.5-VL-32B-Instruct/snapshots/7cfb30d71a1f4f49a57592323337a4a4727301da",
+  "tau_reproj": 0.12,
+  "eval_jsonl": "/scratch/gz2522/gz2522/VLM4WetExperiment-reference/LabGate/data/bio_contextual_official_20260906/expert_contextual.jsonl",
+  "n_model_calls": 84,
+  "oracle_disclosure": "oracle reason plus exact dataset task/current_step"
+}

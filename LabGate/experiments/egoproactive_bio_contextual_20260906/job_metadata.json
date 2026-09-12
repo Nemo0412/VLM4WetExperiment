@@ -1,0 +1,57 @@
+{
+  "repository_commit": "5755752dfd51d1cc1260610b656a27a42be83781",
+  "dataset_annotation_sha256": "0486d4c8091c1b406c8e2358bef5ba6f61e5ffabac3bb438a5eabe135f999968",
+  "context_data_sha256": {
+    "gate": "ee6294b01f8543a4851fb36bef06746f263d90cd19747b3e6b535fdd7f136be5",
+    "expert": "58a1cdda9ccfcbe8626c3aae34bcbb9199a230e948f199cb2c2af6b077d367aa"
+  },
+  "models": {
+    "judger": {
+      "name": "Qwen/Qwen2.5-VL-3B-Instruct",
+      "revision": "66285546d2b821cf421d4f5eb2576359d3770cd3"
+    },
+    "expert": {
+      "name": "Qwen/Qwen2.5-VL-32B-Instruct",
+      "revision": "7cfb30d71a1f4f49a57592323337a4a4727301da"
+    }
+  },
+  "completed_jobs": [
+    {
+      "id": 17085408,
+      "purpose": "context pilot before history/request disambiguation",
+      "gpu": "NVIDIA L40S",
+      "state": "COMPLETED",
+      "elapsed": "00:02:12",
+      "exit_code": "0:0"
+    },
+    {
+      "id": 17086082,
+      "purpose": "development gate iteration before explicit history timing rule",
+      "gpu": "NVIDIA L40S",
+      "state": "COMPLETED",
+      "elapsed": "00:02:31",
+      "exit_code": "0:0"
+    },
+    {
+      "id": 17086568,
+      "purpose": "oracle-triggered contextual 32B expert",
+      "gpu": "NVIDIA H100",
+      "state": "COMPLETED",
+      "elapsed": "00:07:14",
+      "exit_code": "0:0"
+    },
+    {
+      "id": 17086574,
+      "purpose": "final contextual 3B-to-32B cascade and final three-variant gate evidence",
+      "gpu": "NVIDIA H100",
+      "state": "COMPLETED",
+      "elapsed": "00:04:24",
+      "exit_code": "0:0"
+    }
+  ],
+  "cancelled_job": {
+    "id": 17086415,
+    "reason": "redundant after cascade saved final prompt gate predictions for all primary variants; no GPU allocated"
+  },
+  "tests": "21 unittest cases passed"
+}

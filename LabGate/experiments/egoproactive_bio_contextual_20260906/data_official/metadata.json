@@ -1,0 +1,20 @@
+{
+  "annotation_sha256": "0486d4c8091c1b406c8e2358bef5ba6f61e5ffabac3bb438a5eabe135f999968",
+  "n_gate": 25,
+  "n_expert": 14,
+  "shared_model_context": [
+    "video/frame_indices",
+    "protocol",
+    "asr_text",
+    "current_step",
+    "history_official_raw/clean or history_full_raw/clean"
+  ],
+  "history_official_raw": "high-level query plus latest 4 prior turns, matching WearableAI, with control tokens",
+  "history_official_clean": "same official history with $interrupt$/$silent$ removed",
+  "history_full_raw": "exact full cumulative dialog before this decision, including control tokens",
+  "history_full_clean": "same full cumulative dialog with control tokens removed",
+  "current_step": "exact aligned task[i] supplied by the dataset",
+  "warning": "Some task entries explicitly contain error/recovery wording; report separately from vision-only runs.",
+  "gate_sha256": "ee6294b01f8543a4851fb36bef06746f263d90cd19747b3e6b535fdd7f136be5",
+  "expert_sha256": "58a1cdda9ccfcbe8626c3aae34bcbb9199a230e948f199cb2c2af6b077d367aa"
+}

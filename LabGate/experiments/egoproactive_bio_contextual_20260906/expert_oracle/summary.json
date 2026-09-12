@@ -1,0 +1,189 @@
+{
+  "official_raw_reprojection": {
+    "n": 14,
+    "type_accuracy": 0.6428571428571429,
+    "semantic_complete_rate": 0.5,
+    "mean_concept_recall": 0.6904761904761905,
+    "nonempty_message_rate": 1.0,
+    "pred_type_counts": {
+      "ASSISTANT": 3,
+      "SAFETY": 2,
+      "ACTION_ERROR": 9
+    },
+    "by_gt_type": {
+      "action_error": {
+        "n": 4,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 1.0
+      },
+      "assistant": {
+        "n": 8,
+        "type_accuracy": 0.375,
+        "semantic_complete_rate": 0.375
+      },
+      "safety": {
+        "n": 2,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 0.0
+      }
+    },
+    "mean_frames_sent": 1.8571428571428572,
+    "mean_latency_s": 1.9865515591310603
+  },
+  "official_raw_full_16": {
+    "n": 14,
+    "type_accuracy": 0.42857142857142855,
+    "semantic_complete_rate": 0.2857142857142857,
+    "mean_concept_recall": 0.5476190476190476,
+    "nonempty_message_rate": 1.0,
+    "pred_type_counts": {
+      "ASSISTANT": 1,
+      "SAFETY": 3,
+      "ACTION_ERROR": 10
+    },
+    "by_gt_type": {
+      "action_error": {
+        "n": 4,
+        "type_accuracy": 0.75,
+        "semantic_complete_rate": 0.5
+      },
+      "assistant": {
+        "n": 8,
+        "type_accuracy": 0.125,
+        "semantic_complete_rate": 0.125
+      },
+      "safety": {
+        "n": 2,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 0.5
+      }
+    },
+    "mean_frames_sent": 16.0,
+    "mean_latency_s": 2.252056509123317
+  },
+  "official_clean_reprojection": {
+    "n": 14,
+    "type_accuracy": 0.6428571428571429,
+    "semantic_complete_rate": 0.42857142857142855,
+    "mean_concept_recall": 0.6666666666666667,
+    "nonempty_message_rate": 1.0,
+    "pred_type_counts": {
+      "ASSISTANT": 3,
+      "SAFETY": 2,
+      "ACTION_ERROR": 9
+    },
+    "by_gt_type": {
+      "action_error": {
+        "n": 4,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 0.75
+      },
+      "assistant": {
+        "n": 8,
+        "type_accuracy": 0.375,
+        "semantic_complete_rate": 0.375
+      },
+      "safety": {
+        "n": 2,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 0.0
+      }
+    },
+    "mean_frames_sent": 1.8571428571428572,
+    "mean_latency_s": 1.9088962321568812
+  },
+  "official_clean_full_16": {
+    "n": 14,
+    "type_accuracy": 0.42857142857142855,
+    "semantic_complete_rate": 0.42857142857142855,
+    "mean_concept_recall": 0.6428571428571429,
+    "nonempty_message_rate": 1.0,
+    "pred_type_counts": {
+      "ASSISTANT": 1,
+      "SAFETY": 2,
+      "ACTION_ERROR": 8,
+      "NONE": 3
+    },
+    "by_gt_type": {
+      "action_error": {
+        "n": 4,
+        "type_accuracy": 0.75,
+        "semantic_complete_rate": 1.0
+      },
+      "assistant": {
+        "n": 8,
+        "type_accuracy": 0.125,
+        "semantic_complete_rate": 0.125
+      },
+      "safety": {
+        "n": 2,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 0.5
+      }
+    },
+    "mean_frames_sent": 16.0,
+    "mean_latency_s": 2.3132793793587814
+  },
+  "full_raw_reprojection": {
+    "n": 14,
+    "type_accuracy": 0.5714285714285714,
+    "semantic_complete_rate": 0.42857142857142855,
+    "mean_concept_recall": 0.5833333333333333,
+    "nonempty_message_rate": 1.0,
+    "pred_type_counts": {
+      "ASSISTANT": 2,
+      "SAFETY": 2,
+      "ACTION_ERROR": 10
+    },
+    "by_gt_type": {
+      "action_error": {
+        "n": 4,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 1.0
+      },
+      "assistant": {
+        "n": 8,
+        "type_accuracy": 0.25,
+        "semantic_complete_rate": 0.25
+      },
+      "safety": {
+        "n": 2,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 0.0
+      }
+    },
+    "mean_frames_sent": 1.8571428571428572,
+    "mean_latency_s": 1.6990215579446937
+  },
+  "full_clean_reprojection": {
+    "n": 14,
+    "type_accuracy": 0.5714285714285714,
+    "semantic_complete_rate": 0.42857142857142855,
+    "mean_concept_recall": 0.619047619047619,
+    "nonempty_message_rate": 1.0,
+    "pred_type_counts": {
+      "ASSISTANT": 2,
+      "SAFETY": 2,
+      "ACTION_ERROR": 10
+    },
+    "by_gt_type": {
+      "action_error": {
+        "n": 4,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 1.0
+      },
+      "assistant": {
+        "n": 8,
+        "type_accuracy": 0.25,
+        "semantic_complete_rate": 0.25
+      },
+      "safety": {
+        "n": 2,
+        "type_accuracy": 1.0,
+        "semantic_complete_rate": 0.0
+      }
+    },
+    "mean_frames_sent": 1.8571428571428572,
+    "mean_latency_s": 1.8209341783076525
+  }
+}

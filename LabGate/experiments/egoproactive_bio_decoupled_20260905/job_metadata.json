@@ -1,0 +1,24 @@
+{
+  "gate": {
+    "slurm_job_id": "17000761",
+    "state": "COMPLETED",
+    "exit_code": "0:0",
+    "elapsed": "00:02:07",
+    "partition": "l40s_public",
+    "node": "gl027",
+    "model_calls": 50
+  },
+  "expert": {
+    "slurm_job_id": "17000868",
+    "state": "COMPLETED",
+    "exit_code": "0:0",
+    "elapsed": "00:04:49",
+    "partition": "h200_public",
+    "node": "gh124",
+    "model_calls": 56,
+    "submission_note": "The sbatch file default is h200_tandon; this completed job used the command-line partition override h200_public."
+  },
+  "account": "torch_pr_674_tandon_advanced",
+  "decoding": "bfloat16, do_sample=false"
+}
+

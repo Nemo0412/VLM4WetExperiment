@@ -1,0 +1,90 @@
+{
+  "clean_history_reprojection": {
+    "n": 25,
+    "accuracy": 0.44,
+    "precision": 0.5,
+    "recall": 0.6428571428571429,
+    "f1": 0.5625000000000001,
+    "tp": 9,
+    "fp": 9,
+    "fn": 5,
+    "tn": 2,
+    "fire_rate": 0.72,
+    "reason_accuracy_on_positive": 0.21428571428571427,
+    "raw_counts": {
+      "NO.": 7,
+      "YES. reason=safety": 1,
+      "YES. reason=next_step": 5,
+      "YES. reason=user_query": 10,
+      "YES. reason=action_error": 2
+    },
+    "mean_frames_sent": 2.24,
+    "mean_latency_s": 0.22994144577533007
+  },
+  "clean_history_full_16": {
+    "n": 25,
+    "accuracy": 0.32,
+    "precision": 0.4117647058823529,
+    "recall": 0.5,
+    "f1": 0.45161290322580644,
+    "tp": 7,
+    "fp": 10,
+    "fn": 7,
+    "tn": 1,
+    "fire_rate": 0.68,
+    "reason_accuracy_on_positive": 0.07142857142857142,
+    "raw_counts": {
+      "NO.": 8,
+      "YES. reason=safety": 1,
+      "YES. reason=next_step": 11,
+      "YES. reason=user_query": 4,
+      "YES. reason=action_error": 1
+    },
+    "mean_frames_sent": 16.0,
+    "mean_latency_s": 0.7866075077280402
+  },
+  "raw_history_reprojection": {
+    "n": 25,
+    "accuracy": 0.56,
+    "precision": 0.5652173913043478,
+    "recall": 0.9285714285714286,
+    "f1": 0.7027027027027025,
+    "tp": 13,
+    "fp": 10,
+    "fn": 1,
+    "tn": 1,
+    "fire_rate": 0.92,
+    "reason_accuracy_on_positive": 0.35714285714285715,
+    "raw_counts": {
+      "NO.": 2,
+      "YES. reason=safety": 1,
+      "YES. reason=next_step": 10,
+      "YES. reason=user_query": 10,
+      "YES. reason=action_error": 2
+    },
+    "mean_frames_sent": 2.24,
+    "mean_latency_s": 0.15942815825343132
+  },
+  "raw_history_full_16": {
+    "n": 25,
+    "accuracy": 0.48,
+    "precision": 0.5217391304347826,
+    "recall": 0.8571428571428571,
+    "f1": 0.6486486486486486,
+    "tp": 12,
+    "fp": 11,
+    "fn": 2,
+    "tn": 0,
+    "fire_rate": 0.92,
+    "reason_accuracy_on_positive": 0.2857142857142857,
+    "raw_counts": {
+      "NO.": 2,
+      "YES. reason=next_step": 14,
+      "YES. reason=safety": 1,
+      "YES. reason=user_query": 7,
+      "YES. reason=action_error": 1
+    },
+    "mean_frames_sent": 16.0,
+    "mean_latency_s": 0.7981441890820861
+  }
+}

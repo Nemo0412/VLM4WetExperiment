@@ -1,0 +1,51 @@
+history_mode,decision_id,phase,pair_id,gt_label,pred_label,fired,judger_raw,guidance,gt_answer,latency_wall_s
+gold,d01,protocol,,interrupt,silent,False,$silent$,,"$interrupt$After sanitizing your hands, take the cell flask from the incubator.",4.328644095920026
+gold,d02,protocol,,silent,interrupt,True,$interrupt$,Disinfect the exterior of the cell flask using a disinfectant spray and allow it to sit for a moment before placing it in the biosafety cabinet. Ensure the UV light is off and the sash is at the recommended working height.,$silent$,4.181705241091549
+gold,d03,error,uv_on,interrupt,interrupt,True,$interrupt$,Disinfect the exterior of the cell flask and place it in the biosafety cabinet. Ensure the UV light is off and the sash is at the recommended working height.,$interrupt$Stop—do not open or use the biosafety cabinet while the UV light is on. Turn off the UV light before proceeding.,3.225091813132167
+gold,d04,recovery,uv_on,silent,interrupt,True,$interrupt$,"Disinfect the exterior of the cell flask using the spray bottle, ensuring thorough coverage.",$silent$,3.4039298249408603
+gold,d05,error,no_gloves,interrupt,interrupt,True,$interrupt$,Turn off the UV light on the biosafety cabinet before proceeding.,$interrupt$Do not reach into the sterile cabinet with bare hands. Put on gloves and disinfect them with alcohol before continuing.,3.0742214089259505
+gold,d06,recovery,no_gloves,silent,interrupt,True,$interrupt$,Sanitize the exterior of the cell flask using 70% ethanol before placing it in the biosafety cabinet. Ensure the UV light is off and the sash is at the recommended working height.,$silent$,4.165807601064444
+gold,d07,error,hood_height,interrupt,interrupt,True,$interrupt$,"Sanitize the exterior of the cell flask using a disinfectant spray or wipe, ensuring thorough coverage before placing it inside the biosafety cabinet.","$interrupt$The cabinet sash is raised too high, which may compromise aseptic conditions. Lower it to the recommended working height before continuing.",3.4180602906271815
+gold,d08,recovery,hood_height,silent,interrupt,True,$interrupt$,Sanitize the exterior of the cell flask using a disinfectant solution before placing it in the biosafety cabinet.,$silent$,2.9411436868831515
+gold,d09,protocol,,interrupt,interrupt,True,$interrupt$,"Gently rock or tap the flask to distribute the trypsin evenly, avoiding vigorous shaking.","$interrupt$Now add PBS to rinse the cells, then discard the rinse.",4.042620348744094
+gold,d10,error,flask_dry,interrupt,interrupt,True,$interrupt$,Add the equivalent of 2 volumes of complete growth medium to neutralize trypsin. Gently pipette to disperse the cells.,$interrupt$Do not leave the flask dry and exposed. Add PBS immediately to rinse the cells.,3.4572561820968986
+gold,d11,recovery,flask_dry,silent,interrupt,True,$interrupt$,Add the equivalent of 2 volumes of complete growth medium to neutralize trypsin. Gently pipette to disperse the cells.,$silent$,3.543799684382975
+gold,d12,protocol,,interrupt,interrupt,True,$interrupt$,Add the equivalent of 2 volumes of complete growth medium to neutralize trypsin. Gently pipette to disperse the cells.,$interrupt$Add trypsin to cover the cell layer.,4.231211778707802
+gold,d13,protocol,,silent,interrupt,True,$interrupt$,"Transfer the appropriate volume of the cell suspension to a new flask, add fresh culture medium, and label the new flask. Return it to the incubator.",$silent$,3.8621761221438646
+gold,d14,error,vigorous_shake,interrupt,interrupt,True,$interrupt$,"Gently pipette the cell suspension to disperse the cells evenly, ensuring they are well mixed.",$interrupt$Avoid vigorous shaking. Gently rock or tap the flask so the trypsin is distributed evenly.,3.2089123502373695
+gold,d15,recovery,vigorous_shake,silent,interrupt,True,$interrupt$,"Disinfect the exterior of the cell flask using the spray bottle, ensuring thorough coverage.",$silent$,3.3798005040735006
+gold,d16,protocol,,interrupt,interrupt,True,$interrupt$,"Gently pipette the cell suspension to disperse the cells, ensuring they are well mixed.",$interrupt$Place the disinfected flask in the incubator and allow the trypsin to act for 2 minutes.,3.552720100618899
+gold,d17,protocol,,silent,interrupt,True,$interrupt$,Remove the flask from the incubator and place it back inside after disinfecting its exterior.,$silent$,4.201387472450733
+gold,d18,protocol,,interrupt,interrupt,True,$interrupt$,Add the equivalent of 2 volumes of complete growth medium to neutralize the trypsin. Gently pipette to disperse the cells.,$interrupt$The intended incubation is complete. Add two volumes of complete growth medium to neutralize the trypsin.,3.748735806904733
+gold,d19,error,over_trypsin,interrupt,interrupt,True,$interrupt$,"Gently pipette the cell suspension to disperse the cells, ensuring they are well mixed.",$interrupt$The cells have remained in trypsin too long. Add complete growth medium now to neutralize the trypsin and limit further exposure.,4.079616894945502
+gold,d20,recovery,over_trypsin,silent,interrupt,True,$interrupt$,"Transfer the appropriate volume of the cell suspension to a new flask, add fresh culture medium, and label the new flask.",$silent$,3.8047621734440327
+gold,d21,protocol,,interrupt,interrupt,True,$interrupt$,"Transfer the appropriate volume of the cell suspension to a new flask, add fresh culture medium, label the new flask, and return it to the incubator.","$interrupt$After gently pipetting to disperse the cells, transfer the appropriate volume into a new flask.",3.7264301478862762
+gold,d22,protocol,,silent,interrupt,True,$interrupt$,"Transfer the appropriate volume of dispersed cells into a new flask, add fresh culture medium, and label the new flask.",$silent$,3.704052023589611
+gold,d23,protocol,,interrupt,interrupt,True,$interrupt$,"Transfer the appropriate volume of dispersed cells into a new flask, add fresh culture medium, and label the new flask.","$interrupt$Once fresh medium is added, label the new flask with the required information.",3.7803666219115257
+gold,d24,protocol,,interrupt,interrupt,True,$interrupt$,"Label the new flask with the necessary information, including the cell type, passage number, and date. Then, return the flask to the incubator.",$interrupt$Return the labeled flask to the incubator.,6.2521143443882465
+gold,d25,protocol,,silent,interrupt,True,$interrupt$,Return the labeled flask to the incubator.,$silent$,3.7946467800065875
+rollout,d01,protocol,,interrupt,silent,False,$silent$,,"$interrupt$After sanitizing your hands, take the cell flask from the incubator.",1.3935900134965777
+rollout,d02,protocol,,silent,silent,False,$silent$,,$silent$,1.702126824297011
+rollout,d03,error,uv_on,interrupt,silent,False,$silent$,,$interrupt$Stop—do not open or use the biosafety cabinet while the UV light is on. Turn off the UV light before proceeding.,1.5741058057174087
+rollout,d04,recovery,uv_on,silent,silent,False,$silent$,,$silent$,2.17294470500201
+rollout,d05,error,no_gloves,interrupt,silent,False,$silent$,,$interrupt$Do not reach into the sterile cabinet with bare hands. Put on gloves and disinfect them with alcohol before continuing.,2.1885712761431932
+rollout,d06,recovery,no_gloves,silent,silent,False,$silent$,,$silent$,2.4819773184135556
+rollout,d07,error,hood_height,interrupt,silent,False,$silent$,,"$interrupt$The cabinet sash is raised too high, which may compromise aseptic conditions. Lower it to the recommended working height before continuing.",1.9728904608637094
+rollout,d08,recovery,hood_height,silent,silent,False,$silent$,,$silent$,1.83401810657233
+rollout,d09,protocol,,interrupt,silent,False,$silent$,,"$interrupt$Now add PBS to rinse the cells, then discard the rinse.",2.8737436896190047
+rollout,d10,error,flask_dry,interrupt,silent,False,$silent$,,$interrupt$Do not leave the flask dry and exposed. Add PBS immediately to rinse the cells.,2.2087601022794843
+rollout,d11,recovery,flask_dry,silent,silent,False,$silent$,,$silent$,2.0987230921164155
+rollout,d12,protocol,,interrupt,silent,False,$silent$,,$interrupt$Add trypsin to cover the cell layer.,2.7932486087083817
+rollout,d13,protocol,,silent,silent,False,$silent$,,$silent$,2.5167803335934877
+rollout,d14,error,vigorous_shake,interrupt,silent,False,$silent$,,$interrupt$Avoid vigorous shaking. Gently rock or tap the flask so the trypsin is distributed evenly.,2.1722435262054205
+rollout,d15,recovery,vigorous_shake,silent,silent,False,$silent$,,$silent$,2.2133789574727416
+rollout,d16,protocol,,interrupt,silent,False,$silent$,,$interrupt$Place the disinfected flask in the incubator and allow the trypsin to act for 2 minutes.,2.2550817485898733
+rollout,d17,protocol,,silent,silent,False,$silent$,,$silent$,2.877286889590323
+rollout,d18,protocol,,interrupt,silent,False,$silent$,,$interrupt$The intended incubation is complete. Add two volumes of complete growth medium to neutralize the trypsin.,2.3613453106954694
+rollout,d19,error,over_trypsin,interrupt,silent,False,$silent$,,$interrupt$The cells have remained in trypsin too long. Add complete growth medium now to neutralize the trypsin and limit further exposure.,2.7910989625379443
+rollout,d20,recovery,over_trypsin,silent,silent,False,$silent$,,$silent$,2.367541404440999
+rollout,d21,protocol,,interrupt,silent,False,$silent$,,"$interrupt$After gently pipetting to disperse the cells, transfer the appropriate volume into a new flask.",2.3619395066052675
+rollout,d22,protocol,,silent,silent,False,$silent$,,$silent$,2.369489436969161
+rollout,d23,protocol,,interrupt,silent,False,$silent$,,"$interrupt$Once fresh medium is added, label the new flask with the required information.",2.4437022749334574
+rollout,d24,protocol,,interrupt,silent,False,$silent$,,$interrupt$Return the labeled flask to the incubator.,4.699236285872757
+rollout,d25,protocol,,silent,silent,False,$silent$,,$silent$,2.7762493481859565

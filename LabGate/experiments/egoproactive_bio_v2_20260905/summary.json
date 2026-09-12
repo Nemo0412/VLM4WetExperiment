@@ -1,0 +1,144 @@
+{
+  "gold": {
+    "n": 25,
+    "accuracy": 0.36,
+    "macro_f1": 0.2727272727272727,
+    "gmean_f1": 0.0,
+    "per_class": {
+      "interrupt": {
+        "support": 14,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "silent": {
+        "support": 11,
+        "precision": 0.4090909090909091,
+        "recall": 0.8181818181818182,
+        "f1": 0.5454545454545454
+      }
+    },
+    "confusion_gt_pred": {
+      "interrupt": {
+        "interrupt": 0,
+        "silent": 13,
+        "invalid": 1
+      },
+      "silent": {
+        "interrupt": 0,
+        "silent": 9,
+        "invalid": 2
+      }
+    },
+    "invalid_outputs": 3,
+    "expert_calls": 0,
+    "expert_call_rate": 0.0,
+    "expert_calls_avoided": 25,
+    "guidance_nonempty_count": 0,
+    "guidance_semantic_accuracy": null,
+    "per_phase": {
+      "error": {
+        "n": 6,
+        "correct": 0,
+        "interrupts": 0
+      },
+      "protocol": {
+        "n": 13,
+        "correct": 4,
+        "interrupts": 0
+      },
+      "recovery": {
+        "n": 6,
+        "correct": 5,
+        "interrupts": 0
+      }
+    },
+    "mean_frames_in": 18.32,
+    "mean_frames_kept": 18.32,
+    "latency_s": {
+      "judger_generate_mean": 1.9552455778792501,
+      "expert_generate_mean_when_fired": null,
+      "decision_wall_mean": 3.1416654420644043
+    },
+    "schema_valid_count": 22,
+    "reason_counts": {
+      "safety_warning": 0,
+      "action_error": 0,
+      "next_step": 0,
+      "user_query": 0,
+      "unknown": 0,
+      "none": 0
+    }
+  },
+  "rollout": {
+    "n": 25,
+    "accuracy": 0.44,
+    "macro_f1": 0.3055555555555556,
+    "gmean_f1": 0.0,
+    "per_class": {
+      "interrupt": {
+        "support": 14,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "silent": {
+        "support": 11,
+        "precision": 0.44,
+        "recall": 1.0,
+        "f1": 0.6111111111111112
+      }
+    },
+    "confusion_gt_pred": {
+      "interrupt": {
+        "interrupt": 0,
+        "silent": 14,
+        "invalid": 0
+      },
+      "silent": {
+        "interrupt": 0,
+        "silent": 11,
+        "invalid": 0
+      }
+    },
+    "invalid_outputs": 0,
+    "expert_calls": 0,
+    "expert_call_rate": 0.0,
+    "expert_calls_avoided": 25,
+    "guidance_nonempty_count": 0,
+    "guidance_semantic_accuracy": null,
+    "per_phase": {
+      "error": {
+        "n": 6,
+        "correct": 0,
+        "interrupts": 0
+      },
+      "protocol": {
+        "n": 13,
+        "correct": 5,
+        "interrupts": 0
+      },
+      "recovery": {
+        "n": 6,
+        "correct": 6,
+        "interrupts": 0
+      }
+    },
+    "mean_frames_in": 18.32,
+    "mean_frames_kept": 18.32,
+    "latency_s": {
+      "judger_generate_mean": 1.9204396108165382,
+      "expert_generate_mean_when_fired": null,
+      "decision_wall_mean": 3.10562399238348
+    },
+    "schema_valid_count": 25,
+    "reason_counts": {
+      "safety_warning": 0,
+      "action_error": 0,
+      "next_step": 0,
+      "user_query": 0,
+      "unknown": 0,
+      "none": 0
+    }
+  }
+}

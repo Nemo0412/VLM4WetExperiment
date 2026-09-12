@@ -1,0 +1,17 @@
+{
+  "completed_at_utc": "2026-09-07T01:47:25Z",
+  "judger": "/scratch/gz2522/gz2522/hf_cache/qwen25vl-led/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3",
+  "expert": "/scratch/ll5914/huggingface/hub/models--Qwen--Qwen2.5-VL-32B-Instruct/snapshots/7cfb30d71a1f4f49a57592323337a4a4727301da",
+  "tau_reproj": 0.12,
+  "gate_jsonl": "/scratch/gz2522/gz2522/VLM4WetExperiment-reference/LabGate/data/bio_contextual_official_20260906/gate_contextual.jsonl",
+  "expert_jsonl_for_scoring_only": "/scratch/gz2522/gz2522/VLM4WetExperiment-reference/LabGate/data/bio_contextual_official_20260906/expert_contextual.jsonl",
+  "variants": [
+    "official_raw_reprojection",
+    "official_clean_full_16",
+    "full_raw_reprojection"
+  ],
+  "n_gate_calls": 75,
+  "n_expert_calls": 19,
+  "routing": "32B called only after parsed positive 3B decision; predicted reason forwarded",
+  "model_context": "same dataset current_step and selected cumulative history sent to both models"
+}

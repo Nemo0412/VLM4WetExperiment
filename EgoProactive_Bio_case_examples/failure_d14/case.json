@@ -1,0 +1,118 @@
+{
+  "case_id": "d14",
+  "outcome": "failure",
+  "variant": "official_raw_reprojection",
+  "summary_zh": "标注要求对加入胰酶后的剧烈摇晃发出 action_error，但 3B 输出 NO，使 32B 在真实 E2E 流程中没有被调用。",
+  "source": {
+    "dataset_video": "/home/gz2522/bio-dataset/EgoProactive-Bio/egoproactive/val/bio_cp_oop_full_001.mp4",
+    "annotated_interval_sec": [
+      245.867,
+      253.867
+    ],
+    "sampled_source_frame_indices": [
+      7488,
+      7489,
+      7490,
+      7491,
+      7492,
+      7493,
+      7494,
+      7495,
+      7496,
+      7497,
+      7498,
+      7499,
+      7500,
+      7501,
+      7502,
+      7503
+    ],
+    "reprojection_keep_local_indices": [
+      0
+    ],
+    "reprojection_kept_source_indices": [
+      7488
+    ],
+    "n_frames_original": 16,
+    "n_frames_sent": 1,
+    "clip_metadata": {
+      "source_interval_sec": [
+        245.867,
+        253.867
+      ],
+      "source_fps": 30.0,
+      "output_fps": 15.0,
+      "output_size": [
+        540,
+        720
+      ],
+      "output_frames": 121,
+      "note": "This clip is for human inspection; model input is shown by the frame artifacts."
+    }
+  },
+  "model_context": {
+    "history": [
+      {
+        "role": "user",
+        "content": "Cell passaging"
+      },
+      {
+        "role": "assistant",
+        "content": "$interrupt$The cabinet sash is raised too high, which may compromise aseptic conditions. Lower it to the recommended working height before continuing."
+      },
+      {
+        "role": "assistant",
+        "content": "$interrupt$Now add PBS to rinse the cells, then discard the rinse."
+      },
+      {
+        "role": "assistant",
+        "content": "$interrupt$Do not leave the flask dry and exposed. Add PBS immediately to rinse the cells."
+      },
+      {
+        "role": "assistant",
+        "content": "$interrupt$Add trypsin to cover the cell layer."
+      }
+    ],
+    "current_step": "Step 10 error — Do not shake the flask vigorously after adding trypsin",
+    "asr_text": ""
+  },
+  "ground_truth": {
+    "fire": true,
+    "reason": "action_error",
+    "type": "action_error",
+    "reference_guidance": "Avoid vigorous shaking. Gently rock or tap the flask so the trypsin is distributed evenly."
+  },
+  "actual_e2e": {
+    "judger_prompt_file": "judger_prompt.txt",
+    "judger_raw": "NO.",
+    "parsed_fire": false,
+    "parsed_reason": null,
+    "judger_latency_s": 0.09202693775296211,
+    "expert_called": false,
+    "expert_prompt_file": null,
+    "expert_raw": "",
+    "predicted_type": "NONE",
+    "message": "",
+    "expert_latency_s": 0.0
+  },
+  "forced_oracle_expert_for_diagnosis": {
+    "warning": "Diagnostic decoupled result with the gold trigger reason; it is not the actual E2E output.",
+    "prompt_file": "oracle_expert_prompt.txt",
+    "oracle_reason_sent": "action_error",
+    "raw": "TYPE: ACTION_ERROR  \nMSG: The person appears to be tilting the flask excessively, which could lead to vigorous shaking. Please handle the flask gently to avoid disturbing the cells unnecessarily.",
+    "predicted_type": "ACTION_ERROR",
+    "message": "The person appears to be tilting the flask excessively, which could lead to vigorous shaking. Please handle the flask gently to avoid disturbing the cells unnecessarily.",
+    "type_correct": true,
+    "semantic": {
+      "covered_groups": [
+        true,
+        true,
+        true
+      ],
+      "groups_covered": 3,
+      "groups_total": 3,
+      "concept_recall": 1.0,
+      "all_required_concepts": true
+    }
+  }
+}

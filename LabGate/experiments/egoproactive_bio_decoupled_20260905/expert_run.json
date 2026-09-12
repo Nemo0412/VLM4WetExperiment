@@ -1,0 +1,8 @@
+{
+  "completed_at_utc": "2026-09-05T15:27:51Z",
+  "expert": "/scratch/ll5914/huggingface/hub/models--Qwen--Qwen2.5-VL-32B-Instruct/snapshots/7cfb30d71a1f4f49a57592323337a4a4727301da",
+  "tau_reproj": 0.12,
+  "eval_jsonl": "/scratch/gz2522/gz2522/VLM4WetExperiment-reference/LabGate/data/bio_decoupled_20260905/expert_oracle_eval.jsonl",
+  "n_model_calls": 56,
+  "oracle_disclosure": "oracle_reason is scoring metadata deliberately supplied as the assumed correct small-model output"
+}

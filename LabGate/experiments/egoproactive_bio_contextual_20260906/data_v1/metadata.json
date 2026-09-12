@@ -1,0 +1,18 @@
+{
+  "annotation_sha256": "0486d4c8091c1b406c8e2358bef5ba6f61e5ffabac3bb438a5eabe135f999968",
+  "n_gate": 25,
+  "n_expert": 14,
+  "shared_model_context": [
+    "video/frame_indices",
+    "protocol",
+    "asr_text",
+    "current_step",
+    "history_raw or history_clean"
+  ],
+  "history_raw": "exact cumulative dialog before this decision, including control tokens",
+  "history_clean": "same roles and spoken content with $interrupt$/$silent$ removed",
+  "current_step": "exact aligned task[i] supplied by the dataset",
+  "warning": "Some task entries explicitly contain error/recovery wording; report separately from vision-only runs.",
+  "gate_sha256": "5b9aff7eae883a1163d41d3c17e2e6775f0ab9ee1428073cfaad7acdae3310be",
+  "expert_sha256": "f991800e981ab9df0dfc7c68a215ca0631baae0c6f6c8832153747837a5a8850"
+}

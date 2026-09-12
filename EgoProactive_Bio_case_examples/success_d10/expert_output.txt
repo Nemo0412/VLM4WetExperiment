@@ -1,0 +1,2 @@
+TYPE: ACTION_ERROR  
+MSG: The flask appears to have been left dry after removing the culture medium. Please promptly rinse the cells with PBS and discard the PBS to maintain cell viability.

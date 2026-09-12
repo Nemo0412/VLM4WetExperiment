@@ -1,0 +1,16 @@
+id,native_reprojection_oracle_reason,full_16_frames_oracle_reason,review_note
+d01,partial,partial,"Repeats hand sanitation but also includes the intended action of taking the flask from the incubator."
+d03,correct,correct,"Identifies the UV hazard and instructs turning it off."
+d05,incorrect,incorrect,"Warns about UV instead of bare-hand cabinet access and gloves."
+d07,incorrect,incorrect,"Reports no visible error and misses the high sash."
+d09,incorrect,incorrect,"Skips the PBS rinse and incorrectly advances to trypsin."
+d10,incorrect,incorrect,"Misses the dry flask and immediate PBS rinse."
+d12,correct,incorrect,"Reprojected output says to add trypsin; full-frame output instead discusses prior/neutralization steps."
+d14,incorrect,incorrect,"Does not identify vigorous shaking or instruct gentle rocking/tapping."
+d16,incorrect,incorrect,"Treats the scene as an earlier sanitation/cabinet step and misses incubation for two minutes."
+d18,incorrect,incorrect,"Misses completed incubation and growth-medium neutralization."
+d19,incorrect,incorrect,"Warns about gloves instead of excessive trypsin exposure and neutralization."
+d21,incorrect,partial,"Reprojected output jumps back to trypsin; full-frame output recognizes transfer but guides to later medium/label actions."
+d23,incorrect,incorrect,"Discusses trypsin/liquid handling instead of labeling the new flask."
+d24,incorrect,incorrect,"Discusses liquid/PBS handling instead of returning the labeled flask to the incubator."
+

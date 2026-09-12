@@ -1,0 +1,8 @@
+{
+  "completed_at_utc": "2026-09-07T01:27:29Z",
+  "judger": "/scratch/gz2522/gz2522/hf_cache/qwen25vl-led/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3",
+  "tau_reproj": 0.12,
+  "eval_jsonl": "/scratch/gz2522/gz2522/VLM4WetExperiment-reference/LabGate/data/bio_contextual_official_20260906/gate_contextual.jsonl",
+  "n_model_calls": 150,
+  "context": "dataset current_step plus official max-4 or full cumulative history"
+}

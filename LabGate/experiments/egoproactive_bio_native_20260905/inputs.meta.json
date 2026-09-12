@@ -1,0 +1,39 @@
+{
+  "schema": "native LabGate eval record + audit-only Bio fields",
+  "n": 25,
+  "by_gt_type": {
+    "assistant": 8,
+    "none": 11,
+    "safety": 2,
+    "action_error": 4
+  },
+  "by_gt_reason": {
+    "next_step": 8,
+    "none": 11,
+    "safety": 2,
+    "action_error": 4
+  },
+  "annotation_sha256": "0486d4c8091c1b406c8e2358bef5ba6f61e5ffabac3bb438a5eabe135f999968",
+  "label_mapping": {
+    "silent": "none",
+    "error/uv_on or error/no_gloves": "safety",
+    "other error": "action_error",
+    "other interrupt": "assistant with gate reason next_step"
+  },
+  "model_inputs": [
+    "video/frame_indices",
+    "protocol",
+    "asr_text"
+  ],
+  "audit_only_not_model_inputs": [
+    "gt_type",
+    "gt_fire",
+    "gt_reason",
+    "reference_guidance",
+    "phase",
+    "pair_id",
+    "task_for_audit_only",
+    "interval_sec",
+    "note"
+  ]
+}

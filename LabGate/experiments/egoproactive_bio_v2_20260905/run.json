@@ -1,0 +1,57 @@
+{
+  "status": "complete",
+  "version": "bio_v2",
+  "started_at_utc": "2026-09-05T14:13:41Z",
+  "args": {
+    "baseline_run": "/scratch/gz2522/gz2522/VLM4WetExperiment-reference/LabGate/outputs/bio_16997938",
+    "out_dir": "/scratch/gz2522/gz2522/VLM4WetExperiment-reference/LabGate/outputs/bio_v2_16999592",
+    "limit": 0,
+    "history_modes": [
+      "gold",
+      "rollout"
+    ],
+    "target_fps": 2.0,
+    "max_current_frames": 32,
+    "history_images": 4,
+    "max_pixels": 200704
+  },
+  "models": {
+    "judger": "/scratch/gz2522/gz2522/hf_cache/qwen25vl-led/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3",
+    "expert": "/scratch/ll5914/huggingface/hub/models--Qwen--Qwen2.5-VL-32B-Instruct/snapshots/7cfb30d71a1f4f49a57592323337a4a4727301da"
+  },
+  "dataset": "/home/gz2522/bio-dataset/EgoProactive-Bio",
+  "annotation_sha256": "0486d4c8091c1b406c8e2358bef5ba6f61e5ffabac3bb438a5eabe135f999968",
+  "host": "gh119.hpc.nyu.edu",
+  "slurm_job_id": "16999592",
+  "gpu": [
+    "NVIDIA H200"
+  ],
+  "packages": {
+    "torch": "2.5.1+cu121",
+    "transformers": "4.49.0",
+    "decord": "0.6.0",
+    "numpy": "1.26.4"
+  },
+  "source_sha256": {
+    "eval_egoproactive_bio_v2.py": "6f0a6c41dafb2da7ed4b04ab1fe797ef42ddb0cecf44273a3976992243778d57",
+    "proactive_v2.py": "73e37cd2bf33ebf58d366a99991c2cac12ab911b3abd8bf10ef3e3de92d1610c",
+    "proactive_models.py": "0b27c74ebc91806755f724fd79380a0a2f41e339291b7f8e6ccd90e438699e35",
+    "prompts.py": "0e9521443293b141879bc488e5d7505b15214c1f674364ff9bcb96fa1d432788",
+    "models.py": "1a0259def173e3d782b7bccd620646aadd199521dcd7d8019d4275cb24c17d0f",
+    "egoproactive_bio.py": "a412ab7eac7a430f0f7bcaa0c29819b0b2bc1f70c5e279c640b10abe914f0ef7"
+  },
+  "state_policy": "last two small-model observations, updated even when silent; no gold step labels",
+  "history_policy": "actual chat roles, control tags removed, at most four turns after initial query",
+  "timing": "wall includes actual shared preparation cost + processor/generation; loading separate; no warmup",
+  "preparation_wall_s": 23.427208966575563,
+  "model_load_wall_s": 39.570838754065335,
+  "device_maps": {
+    "judger": {
+      "": "0"
+    },
+    "expert": {
+      "": "0"
+    }
+  },
+  "finished_at_utc": "2026-09-05T14:16:41Z"
+}

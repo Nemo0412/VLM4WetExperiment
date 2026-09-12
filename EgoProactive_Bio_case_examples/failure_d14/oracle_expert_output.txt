@@ -1,0 +1,2 @@
+TYPE: ACTION_ERROR  
+MSG: The person appears to be tilting the flask excessively, which could lead to vigorous shaking. Please handle the flask gently to avoid disturbing the cells unnecessarily.

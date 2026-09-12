@@ -1,0 +1,87 @@
+{
+  "official_raw_reprojection": {
+    "n": 25,
+    "gate_accuracy": 0.48,
+    "gate_precision": 0.5555555555555556,
+    "gate_recall": 0.35714285714285715,
+    "gate_f1": 0.43478260869565216,
+    "tp": 5,
+    "fp": 4,
+    "fn": 9,
+    "tn": 7,
+    "expert_calls": 9,
+    "expert_call_rate": 0.36,
+    "gate_reason_accuracy_on_gt_positive": 0.07142857142857142,
+    "expert_type_accuracy_when_true_positive_routed": 0.6,
+    "end_to_end_type_accuracy_all": 0.4,
+    "end_to_end_type_success_on_gt_positive": 0.21428571428571427,
+    "end_to_end_semantic_complete_on_gt_positive": 0.2857142857142857,
+    "judger_raw_counts": {
+      "NO.": 14,
+      "YES. reason=next_step": 6,
+      "YES. reason=user_query": 2,
+      "YES. reason=action_error": 1,
+      "NO. reason=neutral": 1,
+      "NO. reason=next_step": 1
+    },
+    "expert_pred_type_counts": {
+      "SAFETY": 5,
+      "ACTION_ERROR": 4
+    }
+  },
+  "official_clean_full_16": {
+    "n": 25,
+    "gate_accuracy": 0.48,
+    "gate_precision": 1.0,
+    "gate_recall": 0.07142857142857142,
+    "gate_f1": 0.13333333333333333,
+    "tp": 1,
+    "fp": 0,
+    "fn": 13,
+    "tn": 11,
+    "expert_calls": 1,
+    "expert_call_rate": 0.04,
+    "gate_reason_accuracy_on_gt_positive": 0.0,
+    "expert_type_accuracy_when_true_positive_routed": 0.0,
+    "end_to_end_type_accuracy_all": 0.44,
+    "end_to_end_type_success_on_gt_positive": 0.0,
+    "end_to_end_semantic_complete_on_gt_positive": 0.0,
+    "judger_raw_counts": {
+      "NO.": 16,
+      "NO. reason=next_step": 8,
+      "YES. reason=user_query": 1
+    },
+    "expert_pred_type_counts": {
+      "ACTION_ERROR": 1
+    }
+  },
+  "full_raw_reprojection": {
+    "n": 25,
+    "gate_accuracy": 0.56,
+    "gate_precision": 0.6666666666666666,
+    "gate_recall": 0.42857142857142855,
+    "gate_f1": 0.5217391304347826,
+    "tp": 6,
+    "fp": 3,
+    "fn": 8,
+    "tn": 8,
+    "expert_calls": 9,
+    "expert_call_rate": 0.36,
+    "gate_reason_accuracy_on_gt_positive": 0.14285714285714285,
+    "expert_type_accuracy_when_true_positive_routed": 0.6666666666666666,
+    "end_to_end_type_accuracy_all": 0.48,
+    "end_to_end_type_success_on_gt_positive": 0.2857142857142857,
+    "end_to_end_semantic_complete_on_gt_positive": 0.21428571428571427,
+    "judger_raw_counts": {
+      "NO.": 16,
+      "YES. reason=next_step": 5,
+      "YES. reason=user_query": 2,
+      "YES. reason=action_error": 2
+    },
+    "expert_pred_type_counts": {
+      "SAFETY": 5,
+      "ACTION_ERROR": 3,
+      "ASSISTANT": 1
+    }
+  }
+}

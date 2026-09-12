@@ -6,7 +6,31 @@ Repo: [Nemo0412/VLM4WetExperiment](https://github.com/Nemo0412/VLM4WetExperiment
 
 ---
 
-## Progress (2026-07)
+## Progress (2026-09)
+
+**2026-09-06 · EgoProactive-Bio correction:** the first native adaptation had omitted
+the dataset's per-decision `dialog[i]` from 3B input and left the 32B trigger
+`current_step` empty. The corrected pipeline sends official-style gold chat history
+and the same `task[i]` to both models, then forwards the actual 3B reason only after
+a parsed YES. On 25 decisions, the main condition has gate TP/FP/FN/TN 5/4/9/7
+(35.7% recall, 0.435 F1); four of five routed true positives receive correct guidance,
+but all four false positives produce unnecessary or wrong guidance. See the
+[corrected experiment and raw outputs](LabGate/experiments/egoproactive_bio_contextual_20260906/README.md),
+[exact contextual inputs/prompts](LabGate/PROMPTS_BIO_CONTEXTUAL.md), and
+[repository audit](LabGate/REPOSITORY_AUDIT.md).
+
+The canonical description of the dataset mapping, exact model inputs and outputs,
+evaluation protocol, all measured results, and failure analysis is the
+**[complete EgoProactive-Bio evaluation report](LabGate/EGOPROACTIVE_BIO_EVALUATION_REPORT.md)**.
+
+The earlier [v1](LabGate/experiments/egoproactive_bio_20260905/README.md) and
+[v2](LabGate/experiments/egoproactive_bio_v2_20260905/README.md) experiments remain
+as controls for history-label bias and structured-output degeneration.
+
+The corrected oracle-triggered 32B evaluation reaches 64.3% TYPE accuracy and
+50.0% automatic semantic completeness in the main condition; strict manual review
+finds 6 correct, 4 partial, and 4 wrong messages. Normal next-step timing remains
+the main expert failure. Earlier no-context results remain as visual ablations.
 
 ### A. FineBioQwenStream — protocol stream monitor (Qwen2.5-VL-7B)
 

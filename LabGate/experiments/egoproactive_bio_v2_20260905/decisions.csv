@@ -1,0 +1,51 @@
+history_mode,decision_id,gt_label,pred_label,reason_type,observation,current_step,step_status,schema_valid,guidance,gt_answer
+gold,d01,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$After sanitizing your hands, take the cell flask from the incubator."
+gold,d02,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+gold,d03,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Stop—do not open or use the biosafety cabinet while the UV light is on. Turn off the UV light before proceeding.
+gold,d04,silent,invalid,unknown,,unknown,unknown,False,,$silent$
+gold,d05,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Do not reach into the sterile cabinet with bare hands. Put on gloves and disinfect them with alcohol before continuing.
+gold,d06,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+gold,d07,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$The cabinet sash is raised too high, which may compromise aseptic conditions. Lower it to the recommended working height before continuing."
+gold,d08,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+gold,d09,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$Now add PBS to rinse the cells, then discard the rinse."
+gold,d10,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Do not leave the flask dry and exposed. Add PBS immediately to rinse the cells.
+gold,d11,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+gold,d12,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Add trypsin to cover the cell layer.
+gold,d13,silent,invalid,unknown,,unknown,unknown,False,,$silent$
+gold,d14,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Avoid vigorous shaking. Gently rock or tap the flask so the trypsin is distributed evenly.
+gold,d15,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+gold,d16,interrupt,invalid,unknown,,unknown,unknown,False,,$interrupt$Place the disinfected flask in the incubator and allow the trypsin to act for 2 minutes.
+gold,d17,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+gold,d18,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$The intended incubation is complete. Add two volumes of complete growth medium to neutralize the trypsin.
+gold,d19,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$The cells have remained in trypsin too long. Add complete growth medium now to neutralize the trypsin and limit further exposure.
+gold,d20,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+gold,d21,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$After gently pipetting to disperse the cells, transfer the appropriate volume into a new flask."
+gold,d22,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+gold,d23,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$Once fresh medium is added, label the new flask with the required information."
+gold,d24,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Return the labeled flask to the incubator.
+gold,d25,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d01,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$After sanitizing your hands, take the cell flask from the incubator."
+rollout,d02,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d03,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Stop—do not open or use the biosafety cabinet while the UV light is on. Turn off the UV light before proceeding.
+rollout,d04,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d05,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Do not reach into the sterile cabinet with bare hands. Put on gloves and disinfect them with alcohol before continuing.
+rollout,d06,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d07,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$The cabinet sash is raised too high, which may compromise aseptic conditions. Lower it to the recommended working height before continuing."
+rollout,d08,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d09,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$Now add PBS to rinse the cells, then discard the rinse."
+rollout,d10,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Do not leave the flask dry and exposed. Add PBS immediately to rinse the cells.
+rollout,d11,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d12,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Add trypsin to cover the cell layer.
+rollout,d13,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d14,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Avoid vigorous shaking. Gently rock or tap the flask so the trypsin is distributed evenly.
+rollout,d15,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d16,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Place the disinfected flask in the incubator and allow the trypsin to act for 2 minutes.
+rollout,d17,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d18,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$The intended incubation is complete. Add two volumes of complete growth medium to neutralize the trypsin.
+rollout,d19,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$The cells have remained in trypsin too long. Add complete growth medium now to neutralize the trypsin and limit further exposure.
+rollout,d20,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d21,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$After gently pipetting to disperse the cells, transfer the appropriate volume into a new flask."
+rollout,d22,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$
+rollout,d23,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,"$interrupt$Once fresh medium is added, label the new flask with the required information."
+rollout,d24,interrupt,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$interrupt$Return the labeled flask to the incubator.
+rollout,d25,silent,silent,none,The person is wearing gloves and holding a tube.,unknown,unknown,True,,$silent$

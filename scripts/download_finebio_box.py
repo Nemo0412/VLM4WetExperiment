@@ -8,6 +8,7 @@ no need to load whole archives into memory. Safe to resume: skips existing files
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 import time
@@ -16,7 +17,6 @@ from pathlib import Path
 import requests
 
 SHARED_LINK = "https://aist.box.com/s/9ai0p8rns31d2iok6z2xmv90st7gqtgs"
-DEFAULT_PASSWORD = "54!bx%l(MZr]dCnOog"
 DEFAULT_OUT = "/scratch/ll5914/Labos/Llava/data/FineBio"
 DOWNLOAD_TIMEOUT_MS = 7_200_000  # 2 hours to trigger Box download
 MAX_RETRIES = 5
@@ -262,7 +262,11 @@ def main() -> int:
         description="Download FineBio Box dataset to scratch (server-side)"
     )
     parser.add_argument("--out-dir", default=DEFAULT_OUT)
-    parser.add_argument("--password", default=DEFAULT_PASSWORD)
+    parser.add_argument(
+        "--password",
+        default=os.environ.get("FINEBIO_BOX_PASSWORD"),
+        help="Box shared-link password (default: FINEBIO_BOX_PASSWORD)",
+    )
     parser.add_argument("--list-only", action="store_true")
     parser.add_argument(
         "--only",
@@ -279,6 +283,9 @@ def main() -> int:
 
     if args.list_only:
         return 0
+
+    if not args.password:
+        parser.error("--password or FINEBIO_BOX_PASSWORD is required for downloading")
 
     only = set(args.only) if args.only else None
     failures = download_with_playwright(args.password, items, Path(args.out_dir), only)

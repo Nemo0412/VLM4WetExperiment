@@ -1,0 +1,27 @@
+{
+  "status": "invalidated",
+  "job_id": "16999479",
+  "reason": "Ambiguous structured decision wrongly accepted by prefix parser; fixed with exact enum validation and regression test.",
+  "examples": [
+    {
+      "decision_id": "d01",
+      "judger_raw": "{\"decision\":\"interrupt|silent\",\"reason_type\":\"safety_warning\",\"observation\":\"person wearing gloves and a lab coat, holding a tube in their hand\",\"current_step\":\"observing the environment\",\"step_status\":\"in_progress\"}",
+      "invalid_old_prediction": "interrupt"
+    },
+    {
+      "decision_id": "d02",
+      "judger_raw": "{\"decision\":\"interrupt|silent\",\"reason_type\":\"none\",\"observation\":\"person wearing gloves and a lab coat, holding a tube in their hand\",\"current_step\":\"observing the environment\",\"step_status\":\"in_progress\"}",
+      "invalid_old_prediction": "interrupt"
+    },
+    {
+      "decision_id": "d03",
+      "judger_raw": "{\"decision\":\"interrupt|silent\",\"reason_type\":\"none\",\"observation\":\"person wearing gloves and a lab coat, holding a tube in their hand\",\"current_step\":\"observing the environment\",\"step_status\":\"in_progress\"}",
+      "invalid_old_prediction": "interrupt"
+    },
+    {
+      "decision_id": "d04",
+      "judger_raw": "{\"decision\":\"interrupt|silent\",\"reason_type\":\"safety_warning|action_error|next_step|user_query|none\",\"observation\":\"person wearing gloves and a lab coat, holding a tube in their hand\",\"current_step\":\"observing the environment\",\"step_status\":\"in_progress\"}",
+      "invalid_old_prediction": "interrupt"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "job_id": "16999066",
+  "state": "COMPLETED",
+  "exit_code": "0:0",
+  "node": "gl064",
+  "partition": "l40s_public",
+  "gpu": "L40S",
+  "elapsed": "00:02:22",
+  "baseline_job": "16997938",
+  "decision_ids": [
+    "d02",
+    "d03",
+    "d04",
+    "d05",
+    "d10",
+    "d14",
+    "d18",
+    "d19"
+  ],
+  "model": "Qwen2.5-VL-3B-Instruct",
+  "selection": "fixed diagnostic subset, not a replacement full evaluation",
+  "source_sha256": {
+    "LabGate/diagnose_egoproactive_bio.py": "d47907dcf292dd0a4fa7869633563072f6a356aebc2ce07b8a31b73798e2e20a",
+    "LabGate/egoproactive_bio.py": "a412ab7eac7a430f0f7bcaa0c29819b0b2bc1f70c5e279c640b10abe914f0ef7",
+    "LabGate/models.py": "1a0259def173e3d782b7bccd620646aadd199521dcd7d8019d4275cb24c17d0f"
+  },
+  "queued_h200_job": "16999037 cancelled while pending after L40S diagnostic started"
+}

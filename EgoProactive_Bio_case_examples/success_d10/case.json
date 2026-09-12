@@ -1,0 +1,118 @@
+{
+  "case_id": "d10",
+  "outcome": "success",
+  "variant": "official_raw_reprojection",
+  "summary_zh": "3B 正确触发 action_error；32B 正确指出培养瓶在移除培养基后不能干置，并要求立即使用 PBS 冲洗。",
+  "source": {
+    "dataset_video": "/home/gz2522/bio-dataset/EgoProactive-Bio/egoproactive/val/bio_cp_oop_full_001.mp4",
+    "annotated_interval_sec": [
+      124.233,
+      132.233
+    ],
+    "sampled_source_frame_indices": [
+      3839,
+      3840,
+      3841,
+      3842,
+      3843,
+      3844,
+      3845,
+      3846,
+      3847,
+      3848,
+      3849,
+      3850,
+      3851,
+      3852,
+      3853,
+      3854
+    ],
+    "reprojection_keep_local_indices": [
+      0
+    ],
+    "reprojection_kept_source_indices": [
+      3839
+    ],
+    "n_frames_original": 16,
+    "n_frames_sent": 1,
+    "clip_metadata": {
+      "source_interval_sec": [
+        124.233,
+        132.233
+      ],
+      "source_fps": 30.0,
+      "output_fps": 15.0,
+      "output_size": [
+        540,
+        720
+      ],
+      "output_frames": 121,
+      "note": "This clip is for human inspection; model input is shown by the frame artifacts."
+    }
+  },
+  "model_context": {
+    "history": [
+      {
+        "role": "user",
+        "content": "Cell passaging"
+      },
+      {
+        "role": "assistant",
+        "content": "$interrupt$Stop—do not open or use the biosafety cabinet while the UV light is on. Turn off the UV light before proceeding."
+      },
+      {
+        "role": "assistant",
+        "content": "$interrupt$Do not reach into the sterile cabinet with bare hands. Put on gloves and disinfect them with alcohol before continuing."
+      },
+      {
+        "role": "assistant",
+        "content": "$interrupt$The cabinet sash is raised too high, which may compromise aseptic conditions. Lower it to the recommended working height before continuing."
+      },
+      {
+        "role": "assistant",
+        "content": "$interrupt$Now add PBS to rinse the cells, then discard the rinse."
+      }
+    ],
+    "current_step": "Step 7 error — Do not leave the flask dry after removing culture medium",
+    "asr_text": ""
+  },
+  "ground_truth": {
+    "fire": true,
+    "reason": "action_error",
+    "type": "action_error",
+    "reference_guidance": "Do not leave the flask dry and exposed. Add PBS immediately to rinse the cells."
+  },
+  "actual_e2e": {
+    "judger_prompt_file": "judger_prompt.txt",
+    "judger_raw": "YES. reason=action_error",
+    "parsed_fire": true,
+    "parsed_reason": "action_error",
+    "judger_latency_s": 0.16214592102915049,
+    "expert_called": true,
+    "expert_prompt_file": "expert_prompt.txt",
+    "expert_raw": "TYPE: ACTION_ERROR  \nMSG: The flask appears to have been left dry after removing the culture medium. Please promptly rinse the cells with PBS and discard the PBS to maintain cell viability.",
+    "predicted_type": "ACTION_ERROR",
+    "message": "The flask appears to have been left dry after removing the culture medium. Please promptly rinse the cells with PBS and discard the PBS to maintain cell viability.",
+    "expert_latency_s": 1.404708961956203
+  },
+  "forced_oracle_expert_for_diagnosis": {
+    "warning": "Diagnostic decoupled result with the gold trigger reason; it is not the actual E2E output.",
+    "prompt_file": "oracle_expert_prompt.txt",
+    "oracle_reason_sent": "action_error",
+    "raw": "TYPE: ACTION_ERROR  \nMSG: The flask appears to have been left dry after removing the culture medium. Please promptly rinse the cells with PBS and discard the PBS to maintain cell viability.",
+    "predicted_type": "ACTION_ERROR",
+    "message": "The flask appears to have been left dry after removing the culture medium. Please promptly rinse the cells with PBS and discard the PBS to maintain cell viability.",
+    "type_correct": true,
+    "semantic": {
+      "covered_groups": [
+        true,
+        true,
+        true
+      ],
+      "groups_covered": 3,
+      "groups_total": 3,
+      "concept_recall": 1.0,
+      "all_required_concepts": true
+    }
+  }
+}

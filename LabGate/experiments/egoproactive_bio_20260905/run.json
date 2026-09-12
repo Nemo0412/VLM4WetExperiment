@@ -1,0 +1,62 @@
+{
+  "status": "complete",
+  "started_at_utc": "2026-09-05T13:23:48Z",
+  "args": {
+    "dataset": "/home/gz2522/bio-dataset/EgoProactive-Bio",
+    "out_dir": "/scratch/gz2522/gz2522/VLM4WetExperiment-reference/LabGate/outputs/bio_16997938",
+    "judger": "/scratch/gz2522/gz2522/hf_cache/qwen25vl-led/hub/models--Qwen--Qwen2.5-VL-3B-Instruct/snapshots/66285546d2b821cf421d4f5eb2576359d3770cd3",
+    "expert": "/scratch/ll5914/huggingface/hub/models--Qwen--Qwen2.5-VL-32B-Instruct/snapshots/7cfb30d71a1f4f49a57592323337a4a4727301da",
+    "history_modes": [
+      "gold",
+      "rollout"
+    ],
+    "window_frames": 8,
+    "prefix_frames": 8,
+    "tau_reproj": 0.12,
+    "no_reprojection": false,
+    "limit": 0,
+    "dry_run": false
+  },
+  "dataset_version": "0.3.0-draft",
+  "annotation_sha256": "0486d4c8091c1b406c8e2358bef5ba6f61e5ffabac3bb438a5eabe135f999968",
+  "video": "/home/gz2522/bio-dataset/EgoProactive-Bio/egoproactive/val/bio_cp_oop_full_001.mp4",
+  "video_fps": 30.0,
+  "video_frames": 21780,
+  "source_commit": "5755752dfd51d1cc1260610b656a27a42be83781",
+  "script_sha256": {
+    "eval_egoproactive_bio.py": "7658d096e98c4613f641f5a1975633a4d2323dbf77f2810c2bc542fff811d985",
+    "egoproactive_bio.py": "a412ab7eac7a430f0f7bcaa0c29819b0b2bc1f70c5e279c640b10abe914f0ef7",
+    "models.py": "1a0259def173e3d782b7bccd620646aadd199521dcd7d8019d4275cb24c17d0f",
+    "pipeline.py": "47a12855f3cbdbdbf552e4e10e851755d5fe490c9056198a163b8343e8f19361",
+    "gate.py": "c8aad3baf0c775147637ed8d085cab6570039e87bcfdd72d9411ae3c22f5988a"
+  },
+  "host": "gh105.hpc.nyu.edu",
+  "slurm_job_id": "16997938",
+  "packages": {
+    "torch": "2.5.1+cu121",
+    "transformers": "4.49.0",
+    "numpy": "1.26.4",
+    "decord": "0.6.0",
+    "accelerate": "1.3.0"
+  },
+  "gpu": [
+    "NVIDIA H200"
+  ],
+  "protocol": "static SOP; no current/future annotations supplied to models",
+  "timing": "decision_wall includes decoding, reprojection, processor and generation; excludes model loading; no warmup",
+  "preparation_wall_s": 47.474127617664635,
+  "model_load_wall_s": 154.46719478163868,
+  "device_maps": {
+    "judger": {
+      "": "0"
+    },
+    "expert": {
+      "": "0"
+    }
+  },
+  "model_commits": {
+    "judger": "66285546d2b821cf421d4f5eb2576359d3770cd3",
+    "expert": "7cfb30d71a1f4f49a57592323337a4a4727301da"
+  },
+  "finished_at_utc": "2026-09-05T13:28:11Z"
+}

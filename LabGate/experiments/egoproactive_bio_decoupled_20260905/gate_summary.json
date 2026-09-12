@@ -1,0 +1,40 @@
+{
+  "native_reprojection": {
+    "n": 25,
+    "accuracy": 0.44,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "tp": 0,
+    "fp": 0,
+    "fn": 14,
+    "tn": 11,
+    "fire_rate": 0.0,
+    "reason_accuracy_on_positive": 0.0,
+    "raw_counts": {
+      "NO.": 25
+    },
+    "mean_frames_sent": 2.24,
+    "mean_latency_s": 0.234481066968292
+  },
+  "full_16_frames": {
+    "n": 25,
+    "accuracy": 0.48,
+    "precision": 1.0,
+    "recall": 0.07142857142857142,
+    "f1": 0.13333333333333333,
+    "tp": 1,
+    "fp": 0,
+    "fn": 13,
+    "tn": 11,
+    "fire_rate": 0.04,
+    "reason_accuracy_on_positive": 0.0,
+    "raw_counts": {
+      "NO.": 15,
+      "NO. reason=none": 9,
+      "YES. reason=action_error": 1
+    },
+    "mean_frames_sent": 16.0,
+    "mean_latency_s": 0.828561924425885
+  }
+}

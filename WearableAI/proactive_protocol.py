@@ -6,7 +6,10 @@ import os
 import sys
 
 # Official frame extraction lives in the HF starter kit.
-STARTER_KIT = "/scratch/ll5914/datasets/wearable-ai/starter_kit"
+STARTER_KIT = os.environ.get(
+    "WEARABLE_AI_STARTER_KIT",
+    "/scratch/gz2522/datasets/wearable-ai/starter_kit",
+)
 if STARTER_KIT not in sys.path:
     sys.path.insert(0, STARTER_KIT)
 

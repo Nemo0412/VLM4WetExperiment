@@ -1,0 +1,22 @@
+[
+  {
+    "role": "user",
+    "content": "Cell passaging"
+  },
+  {
+    "role": "assistant",
+    "content": "$interrupt$Stop—do not open or use the biosafety cabinet while the UV light is on. Turn off the UV light before proceeding."
+  },
+  {
+    "role": "assistant",
+    "content": "$interrupt$Do not reach into the sterile cabinet with bare hands. Put on gloves and disinfect them with alcohol before continuing."
+  },
+  {
+    "role": "assistant",
+    "content": "$interrupt$The cabinet sash is raised too high, which may compromise aseptic conditions. Lower it to the recommended working height before continuing."
+  },
+  {
+    "role": "assistant",
+    "content": "$interrupt$Now add PBS to rinse the cells, then discard the rinse."
+  }
+]

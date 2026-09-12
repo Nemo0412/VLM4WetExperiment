@@ -1,0 +1,41 @@
+{
+  "annotation_sha256": "0486d4c8091c1b406c8e2358bef5ba6f61e5ffabac3bb438a5eabe135f999968",
+  "gate": {
+    "n": 25,
+    "model_inputs": [
+      "video",
+      "frame_indices",
+      "protocol",
+      "asr_text"
+    ],
+    "scoring_only": [
+      "gt_fire",
+      "gt_reason",
+      "gt_type",
+      "phase",
+      "pair_id",
+      "interval_sec"
+    ],
+    "sha256": "79fd405736c0b57b967faaa0649234c4faf9462bcb1714cf8a59c1af75957aad"
+  },
+  "expert": {
+    "n": 14,
+    "model_inputs": [
+      "video",
+      "frame_indices",
+      "protocol",
+      "asr_text",
+      "oracle_reason"
+    ],
+    "oracle_input": "oracle_reason is the reason a correct small gate should pass",
+    "scoring_only": [
+      "gt_type",
+      "reference_guidance",
+      "semantic_rubric",
+      "phase",
+      "pair_id",
+      "interval_sec"
+    ],
+    "sha256": "fa986cb881cffcc451cf5aaec3910c64d427605af99e1bec055bef7b9ce6d97d"
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "gold": {
+    "n": 25,
+    "accuracy": 0.52,
+    "macro_f1": 0.34210526315789475,
+    "gmean_f1": 0.0,
+    "per_class": {
+      "interrupt": {
+        "support": 14,
+        "precision": 0.5416666666666666,
+        "recall": 0.9285714285714286,
+        "f1": 0.6842105263157895
+      },
+      "silent": {
+        "support": 11,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      }
+    },
+    "confusion_gt_pred": {
+      "interrupt": {
+        "interrupt": 13,
+        "silent": 1,
+        "invalid": 0
+      },
+      "silent": {
+        "interrupt": 11,
+        "silent": 0,
+        "invalid": 0
+      }
+    },
+    "invalid_outputs": 0,
+    "expert_calls": 24,
+    "expert_call_rate": 0.96,
+    "expert_calls_avoided": 1,
+    "guidance_nonempty_count": 24,
+    "guidance_semantic_accuracy": null,
+    "per_phase": {
+      "error": {
+        "n": 6,
+        "correct": 6,
+        "interrupts": 6
+      },
+      "protocol": {
+        "n": 13,
+        "correct": 7,
+        "interrupts": 12
+      },
+      "recovery": {
+        "n": 6,
+        "correct": 0,
+        "interrupts": 6
+      }
+    },
+    "mean_frames_in": 15.68,
+    "mean_frames_kept": 12.64,
+    "latency_s": {
+      "judger_generate_mean": 0.47138267531991007,
+      "expert_generate_mean_when_fired": 1.2041878787179787,
+      "decision_wall_mean": 3.804368531964719
+    }
+  },
+  "rollout": {
+    "n": 25,
+    "accuracy": 0.44,
+    "macro_f1": 0.3055555555555556,
+    "gmean_f1": 0.0,
+    "per_class": {
+      "interrupt": {
+        "support": 14,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "silent": {
+        "support": 11,
+        "precision": 0.44,
+        "recall": 1.0,
+        "f1": 0.6111111111111112
+      }
+    },
+    "confusion_gt_pred": {
+      "interrupt": {
+        "interrupt": 0,
+        "silent": 14,
+        "invalid": 0
+      },
+      "silent": {
+        "interrupt": 0,
+        "silent": 11,
+        "invalid": 0
+      }
+    },
+    "invalid_outputs": 0,
+    "expert_calls": 0,
+    "expert_call_rate": 0.0,
+    "expert_calls_avoided": 25,
+    "guidance_nonempty_count": 0,
+    "guidance_semantic_accuracy": null,
+    "per_phase": {
+      "error": {
+        "n": 6,
+        "correct": 0,
+        "interrupts": 0
+      },
+      "protocol": {
+        "n": 13,
+        "correct": 5,
+        "interrupts": 0
+      },
+      "recovery": {
+        "n": 6,
+        "correct": 6,
+        "interrupts": 0
+      }
+    },
+    "mean_frames_in": 15.68,
+    "mean_frames_kept": 12.64,
+    "latency_s": {
+      "judger_generate_mean": 0.342297749556601,
+      "expert_generate_mean_when_fired": null,
+      "decision_wall_mean": 2.3800029595568777
+    }
+  }
+}

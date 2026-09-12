@@ -1,0 +1,63 @@
+{
+  "complete": true,
+  "n": 25,
+  "e2e_type_accuracy": 0.48,
+  "always_expert_type_accuracy": 0.2,
+  "gate_accuracy": 0.48,
+  "gate_precision": 1.0,
+  "gate_recall": 0.07142857142857142,
+  "gate_f1": 0.13333333333333333,
+  "gate_counts": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 13,
+    "tn": 11
+  },
+  "fire_rate": 0.04,
+  "per_type": {
+    "assistant": {
+      "n": 8,
+      "type_acc": 0.0,
+      "gate_acc": 0.0
+    },
+    "none": {
+      "n": 11,
+      "type_acc": 1.0,
+      "gate_acc": 1.0
+    },
+    "safety": {
+      "n": 2,
+      "type_acc": 0.5,
+      "gate_acc": 0.5
+    },
+    "action_error": {
+      "n": 4,
+      "type_acc": 0.0,
+      "gate_acc": 0.0
+    }
+  },
+  "confusion_gt_pred": {
+    "assistant->none": 8,
+    "none->none": 11,
+    "safety->safety": 1,
+    "safety->none": 1,
+    "action_error->none": 4
+  },
+  "mean_frames_in": 16.0,
+  "mean_frames_kept": 2.24,
+  "latency_s": {
+    "judger_mean": 0.23285008080303668,
+    "expert_mean_when_fired": 1.2207441572099924,
+    "e2e_gated_mean": 0.2816798470914364,
+    "e2e_always_expert_mean": 1.7183495142310858,
+    "speedup_vs_always": 6.100363700045927
+  },
+  "reason_accuracy_on_gt_fire": 0.07142857142857142,
+  "reason_confusion_gt_pred": {
+    "next_step->none": 8,
+    "none->none": 11,
+    "safety->safety": 1,
+    "safety->none": 1,
+    "action_error->none": 4
+  }
+}
